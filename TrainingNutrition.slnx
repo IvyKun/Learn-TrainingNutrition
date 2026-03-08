@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TrainingNutrition.Api/TrainingNutrition.Api.csproj" />
+  <Project Path="TrainingNutrition.Application/TrainingNutrition.Application.csproj" />
+  <Project Path="TrainingNutrition.Domain/TrainingNutrition.Domain.csproj" />
+  <Project Path="TrainingNutrition.Tests/TrainingNutrition.Tests.csproj" />
+</Solution>
