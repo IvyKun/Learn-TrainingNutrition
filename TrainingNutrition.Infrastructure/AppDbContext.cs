@@ -1,11 +1,20 @@
 using Microsoft.EntityFrameworkCore;
+using TrainingNutrition.Domain.Dishes;
 using TrainingNutrition.Domain.Ingredients;
+using TrainingNutrition.Domain.Meals;
+using TrainingNutrition.Domain.Tracking;
+using TrainingNutrition.Domain.Users;
 
 namespace TrainingNutrition.Infrastructure;
 
 public class AppDbContext : DbContext
 {
     public DbSet<Ingredient> Ingredients { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<Dish> Dishes { get; set; }
+    public DbSet<IngredientEntry> IngredientEntries { get; set; }
+    public DbSet<Meal> Meals { get; set; }
+    public DbSet<DailyLog> DailyLogs { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
