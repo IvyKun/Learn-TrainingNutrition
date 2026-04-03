@@ -5,6 +5,8 @@ namespace TrainingNutrition.Domain.Dishes;
 
 public sealed class Dish
 {
+    public Guid Id { get; private init; } = Guid.NewGuid();
+    
     private readonly List<IngredientEntry> _entries = new();
 
     public string Name { get; private set; }
@@ -16,6 +18,8 @@ public sealed class Dish
         decimal protein = 0m;
         decimal carbs = 0m;
         decimal fat = 0m;
+        decimal fiber = 0m;
+        decimal salt = 0m;
 
         foreach (var entry in _entries)
         {
@@ -23,9 +27,11 @@ public sealed class Dish
             protein += macros.Protein;
             carbs += macros.Carbs;
             fat += macros.Fat;
+            fiber += macros.Fiber;
+            salt += macros.Salt;
         }
 
-        return new Macronutrients(protein, carbs, fat);
+        return new Macronutrients(protein, carbs, fat, fiber, salt);
     }
 
     public int GetTotalCalories() => GetTotalMacros().Calories;

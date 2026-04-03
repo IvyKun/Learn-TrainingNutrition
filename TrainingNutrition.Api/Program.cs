@@ -1,7 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Infrastructure;
 using TrainingNutrition.Application.Services;
+using TrainingNutrition.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ builder.Services.AddOpenApi();
 // DI registrations
 builder.Services.AddSingleton<IDailyLogRepository, InMemoryDailyLogRepository>();
 builder.Services.AddScoped<DailyLogService>();
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -30,7 +34,9 @@ app.MapGet("/dailylogs/{date}", async (
     if (!DateOnly.TryParse(date, out var parsedDate))
         return Results.BadRequest("Invalid date format. Use yyyy-MM-dd.");
 
-    var log = await service.GetOrCreateAsync(parsedDate, cancellationToken);
+   // TODO: replace with authenticated user ID from JWT token (Phase 4 - Auth)
+    var tempUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    var log = await service.GetOrCreateAsync(tempUserId, parsedDate, cancellationToken);
 
     return Results.Ok(new DailyLogResponse(log.Date, log.GetTotalCalories()));
 })

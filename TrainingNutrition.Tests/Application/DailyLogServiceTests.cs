@@ -12,9 +12,10 @@ public sealed class DailyLogServiceTests
         var repository = new InMemoryDailyLogRepository();
         var service = new DailyLogService(repository);
 
+        var userId = Guid.NewGuid();
         var date = new DateOnly(2026, 2, 21);
 
-        var log = await service.GetOrCreateAsync(date);
+        var log = await service.GetOrCreateAsync(userId, date);
 
         Assert.NotNull(log);
         Assert.Equal(date, log.Date);
@@ -26,10 +27,11 @@ public sealed class DailyLogServiceTests
         var repository = new InMemoryDailyLogRepository();
         var service = new DailyLogService(repository);
 
+         var userId = Guid.NewGuid();
         var date = new DateOnly(2026, 2, 21);
 
-        var first = await service.GetOrCreateAsync(date);
-        var second = await service.GetOrCreateAsync(date);
+        var first = await service.GetOrCreateAsync(userId, date);
+        var second = await service.GetOrCreateAsync(userId, date);
 
         Assert.Same(first, second);
     }

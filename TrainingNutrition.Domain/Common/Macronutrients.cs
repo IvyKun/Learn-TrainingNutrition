@@ -5,6 +5,8 @@ public sealed record Macronutrients
     public decimal Protein { get; }
     public decimal Carbs { get; }
     public decimal Fat { get; }
+    public decimal Fiber { get; }
+    public decimal Salt { get; }
 
     public int Calories
     {
@@ -15,7 +17,7 @@ public sealed record Macronutrients
         }
     }
 
-    public Macronutrients(decimal protein, decimal carbs, decimal fat)
+    public Macronutrients(decimal protein, decimal carbs, decimal fat, decimal fiber, decimal salt)
     {
         if (protein < 0m)
             throw new ArgumentOutOfRangeException(nameof(protein), "Protein cannot be negative.");
@@ -26,9 +28,17 @@ public sealed record Macronutrients
         if (fat < 0m)
             throw new ArgumentOutOfRangeException(nameof(fat), "Fat cannot be negative.");
 
+        if (fiber < 0m)
+            throw new ArgumentOutOfRangeException(nameof(fiber), "Fiber cannot be negative.");
+
+        if (salt < 0m)
+            throw new ArgumentOutOfRangeException(nameof(salt), "Salt cannot be negative.");
+
         Protein = protein;
         Carbs = carbs;
         Fat = fat;
+        Fiber = fiber;
+        Salt = salt;
     }
 
     public Macronutrients Add(Macronutrients other)
@@ -39,7 +49,9 @@ public sealed record Macronutrients
         return new Macronutrients(
             Protein + other.Protein,
             Carbs + other.Carbs,
-            Fat + other.Fat
+            Fat + other.Fat,
+            Fiber + other.Fiber,
+            Salt + other.Salt
         );
     }
 }

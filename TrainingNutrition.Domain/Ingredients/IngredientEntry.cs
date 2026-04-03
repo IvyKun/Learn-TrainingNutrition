@@ -2,8 +2,10 @@ using TrainingNutrition.Domain.Common;
 
 namespace TrainingNutrition.Domain.Ingredients;
 
-public sealed record IngredientEntry
-{
+public sealed class IngredientEntry
+{   
+    public Guid Id { get; private init; } = Guid.NewGuid();
+    
     public Ingredient Ingredient { get; }
     public Grams Grams { get; }
 
@@ -23,7 +25,10 @@ public sealed record IngredientEntry
         return new Macronutrients(
             per100g.Protein * factor,
             per100g.Carbs * factor,
-            per100g.Fat * factor
+            per100g.Fat * factor,
+            per100g.Fiber * factor,
+            per100g.Salt * factor
+
         );
     }
 }

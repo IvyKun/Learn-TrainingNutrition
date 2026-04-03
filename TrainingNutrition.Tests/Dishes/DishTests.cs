@@ -53,7 +53,7 @@ public sealed class DishTests
         // Entry 1: 50g => 5P / 10C / 2.5F
         // Entry 2: 50g => 5P / 10C / 2.5F
         // Total: 10P / 20C / 5F
-        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m));
+        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m, 0m, 0m));
 
         var dish = new Dish("Test dish");
         dish.AddIngredient(new IngredientEntry(ingredient, new Grams(50)));
@@ -61,14 +61,14 @@ public sealed class DishTests
 
         var total = dish.GetTotalMacros();
 
-        Assert.Equal(new Macronutrients(10m, 20m, 5m), total);
+        Assert.Equal(new Macronutrients(10m, 20m, 5m, 0m, 0m), total);
     }
 
     [Fact]
     public void GetTotalCalories_ShouldUseMacrosCaloriesRounding()
     {
         // Same as above => total macros 10/20/5 => calories 165
-        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m));
+        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m, 0m, 0m));
 
         var dish = new Dish("Test dish");
         dish.AddIngredient(new IngredientEntry(ingredient, new Grams(50)));
@@ -82,8 +82,8 @@ public sealed class DishTests
     [Fact]
     public void RemoveIngredient_ShouldRemoveAllMatchingEntries_AndReturnCountRemoved()
     {
-        var oats = new Ingredient("Oats", new Macronutrients(13m, 60m, 7m));
-        var milk = new Ingredient("Milk", new Macronutrients(3.4m, 5m, 1.5m));
+        var oats = new Ingredient("Oats", new Macronutrients(13m, 60m, 7m, 0m, 0m));
+        var milk = new Ingredient("Milk", new Macronutrients(3.4m, 5m, 1.5m, 0m, 0m));
 
         var dish = new Dish("Porridge");
         dish.AddIngredient(new IngredientEntry(oats, new Grams(80)));

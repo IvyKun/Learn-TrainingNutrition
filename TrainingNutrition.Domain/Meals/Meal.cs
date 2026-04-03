@@ -4,7 +4,10 @@ using TrainingNutrition.Domain.Dishes;
 namespace TrainingNutrition.Domain.Meals;
 
 public sealed class Meal
+
 {
+    public Guid Id { get; private init; } = Guid.NewGuid();
+
     private readonly List<Dish> _dishes = new();
 
     public MealType Type { get; private set; }
@@ -56,6 +59,8 @@ public sealed class Meal
         decimal protein = 0m;
         decimal carbs = 0m;
         decimal fat = 0m;
+         decimal fiber = 0m;
+        decimal salt = 0m;
 
         foreach (var dish in _dishes)
         {
@@ -63,9 +68,11 @@ public sealed class Meal
             protein += macros.Protein;
             carbs += macros.Carbs;
             fat += macros.Fat;
+            fiber += macros.Fiber;
+            salt += macros.Salt;
         }
 
-        return new Macronutrients(protein, carbs, fat);
+        return new Macronutrients(protein, carbs, fat, fiber, salt);
     }
 
     public int GetTotalCalories() => GetTotalMacros().Calories;

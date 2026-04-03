@@ -5,13 +5,18 @@ namespace TrainingNutrition.Domain.Tracking;
 
 public sealed class DailyLog
 {
+    public Guid Id { get; private init; } = Guid.NewGuid();
+
+    public Guid UserId { get; private init; }
+
     private readonly List<Meal> _meals = new();
 
     public DateOnly Date { get; }
     public IReadOnlyList<Meal> Meals => _meals;
 
-    public DailyLog(DateOnly date)
+    public DailyLog(Guid userId, DateOnly date)
     {
+        UserId = userId;
         Date = date;
     }
 
@@ -40,6 +45,8 @@ public sealed class DailyLog
         decimal protein = 0m;
         decimal carbs = 0m;
         decimal fat = 0m;
+        decimal fiber = 0m;
+        decimal salt = 0m;
 
         foreach (var meal in _meals)
         {
@@ -47,9 +54,11 @@ public sealed class DailyLog
             protein += macros.Protein;
             carbs += macros.Carbs;
             fat += macros.Fat;
+            fiber += macros.Fiber;
+            salt += macros.Salt;
         }
 
-        return new Macronutrients(protein, carbs, fat);
+        return new Macronutrients(protein, carbs, fat, fiber, salt);
     }
 
     public int GetTotalCalories() => GetTotalMacros().Calories;

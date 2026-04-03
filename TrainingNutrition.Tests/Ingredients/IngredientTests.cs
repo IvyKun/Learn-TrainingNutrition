@@ -10,7 +10,7 @@ public sealed class IngredientTests
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenNameIsInvalid(string name)
     {
-        var macros = new Macronutrients(10m, 20m, 5m);
+        var macros = new Macronutrients(10m, 20m, 5m, 0m, 0m);
 
         var act = () => new Ingredient(name, macros);
 
@@ -28,7 +28,7 @@ public sealed class IngredientTests
     [Fact]
     public void Constructor_ShouldTrimName()
     {
-        var ingredient = new Ingredient("  Rice  ", new Macronutrients(2m, 28m, 0m));
+        var ingredient = new Ingredient("  Rice  ", new Macronutrients(2m, 28m, 0m, 0m, 0m));
 
         Assert.Equal("Rice", ingredient.Name);
     }
@@ -36,7 +36,7 @@ public sealed class IngredientTests
     [Fact]
     public void CaloriesPer100g_ShouldMatchMacrosCalories()
     {
-        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m));
+        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m, 0m, 0m));
 
         Assert.Equal(165, ingredient.CaloriesPer100g);
     }

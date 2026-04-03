@@ -94,7 +94,7 @@ public sealed class MealTests
 
         var total = meal.GetTotalMacros();
 
-        Assert.Equal(new Macronutrients(15m, 20m, 15m), total);
+        Assert.Equal(new Macronutrients(15m, 20m, 15m, 0m, 0m), total);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class MealTests
 
         // Make a dish that results in 82.5 kcal so we can confirm AwayFromZero -> 83
         // Per 100g: 10P / 20C / 5F, with 50g => 5P / 10C / 2.5F => 82.5 -> 83
-        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m));
+        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m, 0m, 0m));
         var dish = new Dish("Test dish");
         dish.AddIngredient(new IngredientEntry(ingredient, new Grams(50)));
 
@@ -115,7 +115,7 @@ public sealed class MealTests
 
     private static Dish CreateSimpleDish(string name, decimal protein, decimal carbs, decimal fat, int grams)
     {
-        var ingredient = new Ingredient("Ingredient", new Macronutrients(protein, carbs, fat));
+        var ingredient = new Ingredient("Ingredient", new Macronutrients(protein, carbs, fat, 0m, 0m));
         var dish = new Dish(name);
 
         dish.AddIngredient(new IngredientEntry(ingredient, new Grams(grams)));

@@ -41,6 +41,9 @@ When I share my implementation:
 - **Call out Unity anti-patterns** — if I write something that works but violates enterprise best practices (e.g. using static, skipping interfaces, god classes), flag it even if it compiles
 - **Reinforce the why constantly** — don't just say "do it this way", explain what goes wrong if you don't
 - **Before each new phase**, do a brief review of what was built and confirm I understand the principles applied, not just the code written
+- **Never use jargon without defining it first** — technical terms (Aggregate, Aggregate Root, DDD, Fluent API, etc.) must be explained in plain language before being used. Never assume prior knowledge of enterprise patterns.
+- **Every decision must have a reason** — never say "do X" without saying "because Y, and if you don't, Z breaks".
+- **When asking the student to make a change**, always explain: (1) what to change, (2) why this change is needed, (3) what goes wrong if you don't do it.
 
 ---
 
@@ -87,14 +90,36 @@ The student can explain the following with their own words:
 
 ### Next Step
 
-**Phase 1 — Step 1: Docker + PostgreSQL setup**
+**Phase 1 — Step 4: Migrations**
 
-Nothing of Phase 1 has been started yet. No docker-compose, no Infrastructure project, no EF Core.
+Steps 1, 2 and 3 are complete.
 
-Start here:
-1. Create `docker-compose.yml` at solution root with a PostgreSQL container
-2. Add connection string to `appsettings.json` in the API project
-3. Verify the container starts and the API can read the connection string
+**Step 3 is done except for one pending action:**
+- Add remaining `DbSet<T>` to `AppDbContext` (only `DbSet<Ingredient>` exists currently)
+- Then: install EF Core tools, add `Microsoft.EntityFrameworkCore.Design` to Api project, run first migration
+
+**What was built in Step 3:**
+- `Macronutrients` extended with `Fiber` and `Salt` properties (all tests updated)
+- All domain entities converted to `sealed class` with `Guid Id { get; private init; } = Guid.NewGuid()`
+- `DailyLog` now receives `Guid userId` in constructor and stores `UserId`
+- `IngredientEntry` converted from `record` to `class`
+- `DailyLogService.GetOrCreateAsync` updated to receive `Guid userId`
+- `Program.cs` uses hardcoded `tempUserId` with TODO comment until Phase 4 (Auth)
+- Configurations created for all entities:
+  - `IngredientConfiguration` — owned type for `Macronutrients` (Protein, Carbs, Fat, Fiber, Salt), unique index on Name
+  - `UserConfiguration` — owned type for `Email`, unique index on Email, max length 254
+  - `IngredientEntryConfiguration` — owned type for `Grams`, FK to Dish (shadow "DishId"), FK to Ingredient (shadow "IngredientId")
+  - `DishConfiguration` — HasMany Entries with FK "DishId"
+  - `MealConfiguration` — HasMany Dishes with FK "MealId", enum Type stored as string
+  - `DailyLogConfiguration` — HasMany Meals with FK "DailyLogId", UserId required
+
+**Immediate next actions:**
+1. Add missing `DbSet<T>` to `AppDbContext` (User, Dish, IngredientEntry, Meal, DailyLog)
+2. `dotnet tool install --global dotnet-ef`
+3. `dotnet add TrainingNutrition.Api package Microsoft.EntityFrameworkCore.Design`
+4. Create first migration: `dotnet ef migrations add InitialCreate --project TrainingNutrition.Infrastructure --startup-project TrainingNutrition.Api`
+5. Apply migration: `dotnet ef database update --project TrainingNutrition.Infrastructure --startup-project TrainingNutrition.Api`
+6. Inspect real tables in DB to validate schema
 
 ---
 
@@ -124,6 +149,7 @@ Start here:
 TrainingNutrition/                        ← solution root
 ├── TrainingNutrition.slnx
 ├── CLAUDE.md
+├── docker-compose.yml                    ✅ PostgreSQL 17 container
 ├── TrainingNutrition.Domain/             ✅ Done
 │   ├── Common/       (Email, Grams, Macronutrients)
 │   ├── Dishes/       (Dish)
@@ -131,13 +157,22 @@ TrainingNutrition/                        ← solution root
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
 │   └── Users/        (User)
+├── TrainingNutrition.Infrastructure/     🔄 WIP (Phase 1 Step 3 done)
+│   ├── AppDbContext.cs                   (DbSet<Ingredient> only — rest pending)
+│   └── Configurations/
+│       ├── IngredientConfiguration.cs
+│       ├── UserConfiguration.cs
+│       ├── IngredientEntryConfiguration.cs
+│       ├── DishConfiguration.cs
+│       ├── MealConfiguration.cs
+│       └── DailyLogConfiguration.cs
 ├── TrainingNutrition.Application/        🔄 WIP
 │   ├── Abstractions/ (IDailyLogRepository)
 │   ├── Infrastructure/ (InMemoryDailyLogRepository — temporary)
 │   └── Services/     (DailyLogService)
 ├── TrainingNutrition.Api/                🔄 WIP
 │   ├── DTOs/         (DailyLogResponse)
-│   └── Program.cs    (DI + GET /dailylogs/{date})
+│   └── Program.cs    (DI + GET /dailylogs/{date} + AppDbContext registered)
 └── TrainingNutrition.Tests/              🔄 WIP
     ├── Application/  (DailyLogServiceTests)
     ├── Common/       (EmailTests, GramsTests, MacronutrientsTests)
@@ -208,14 +243,23 @@ This phase is NOT about new syntax — it's about understanding WHY things are d
 **Goal:** Understand EF Core from scratch before abstracting it behind patterns.
 You must understand the tool before learning how to hide it.
 
-**Step 1 — Infrastructure setup (Docker + PostgreSQL)**
-- Docker Compose file with PostgreSQL container
-- Connection string configuration in the API project
+**Step 1 — Infrastructure setup (Docker + PostgreSQL)** ✅
+- `docker-compose.yml` with PostgreSQL 17 container (credentials: tnuser/tnpassword/trainingnutrition)
+- Connection string in `appsettings.json` (Npgsql format, key: `DefaultConnection`)
 
-**Step 2 — EF Core basics: what is a DbContext?**
-- New project: `TrainingNutrition.Infrastructure`
-- First `DbContext` with one `DbSet<T>`
-- What does EF Core actually do? (object-relational mapping explained)
+**Step 2 — EF Core basics: what is a DbContext?** ✅
+- `TrainingNutrition.Infrastructure` project created
+- `AppDbContext : DbContext` with `DbSet<Ingredient>`
+- Registered in DI as Scoped with `UseNpgsql` in `Program.cs`
+
+**Step 3 — Mapping domain entities to tables** ✅ (one action pending)
+- All entities converted to `sealed class` with `Guid Id`
+- `Macronutrients` extended with `Fiber` and `Salt`
+- `IngredientEntry` converted from `record` to `class`
+- `DailyLog` has `UserId` (Guid) — references User aggregate by Id, not by object
+- All `IEntityTypeConfiguration<T>` created for every entity
+- `OnModelCreating` uses `ApplyConfigurationsFromAssembly`
+- ⚠️ Pending: add remaining `DbSet<T>` to `AppDbContext`
 
 **Step 3 — Mapping Domain entities to tables**
 - Entity configurations using Fluent API (no data annotations — ever)

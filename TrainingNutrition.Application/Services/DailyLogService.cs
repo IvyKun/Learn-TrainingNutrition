@@ -5,6 +5,7 @@ namespace TrainingNutrition.Application.Services;
 
 public sealed class DailyLogService
 {
+
     private readonly IDailyLogRepository _repository;
 
     public DailyLogService(IDailyLogRepository respository)
@@ -17,7 +18,7 @@ public sealed class DailyLogService
         _repository = respository;
     }
 
-    public async Task<DailyLog> GetOrCreateAsync(DateOnly date, CancellationToken cancellationToken = default)
+    public async Task<DailyLog> GetOrCreateAsync(Guid userId, DateOnly date, CancellationToken cancellationToken = default)
     {
         var existing = await _repository.GetByDateAsync(date, cancellationToken);
 
@@ -26,7 +27,7 @@ public sealed class DailyLogService
             return existing;
         }
 
-        var newLog = new DailyLog(date);
+        var newLog = new DailyLog(userId, date);
 
         await _repository.SaveAsync(newLog, cancellationToken);
 
