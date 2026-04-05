@@ -3,6 +3,8 @@ using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Infrastructure;
 using TrainingNutrition.Application.Services;
+using TrainingNutrition.Domain.Common;
+using TrainingNutrition.Domain.Ingredients;
 using TrainingNutrition.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,5 +43,19 @@ app.MapGet("/dailylogs/{date}", async (
     return Results.Ok(new DailyLogResponse(log.Date, log.GetTotalCalories()));
 })
 .WithName("GetDailyLog");
+
+// POST /ingredients
+app.MapPost("/ingredients", async (CreateIngredientRequest request, AppDbContext db, CancellationToken ct) =>
+{
+    var macros = new Macronutrients(request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
+    var ingredient = new Ingredient(request.Name, macros);
+
+    db.Ingredients.Add(ingredient);
+
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created($"/ingredients/{ingredient.Id}", ingredient.Id);
+
+});
 
 app.Run();

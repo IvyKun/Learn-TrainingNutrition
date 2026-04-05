@@ -91,39 +91,26 @@ The student can explain the following with their own words:
 - **Fluent API** — method chaining to configure EF Core mappings (column names, lengths, indexes, relationships) in Infrastructure; preferred over Data Annotations because it keeps the domain free of EF Core dependencies (D of SOLID)
 - **Owned types** — value objects mapped as columns inside the owner's table (no separate table); `OwnsOne` in Fluent API; e.g. `Macronutrients` flattened into `Ingredients` table
 - **Private EF Core constructor** — entities with owned types or navigation properties in their constructor need a `private Entity() { }` so EF Core can materialize instances from DB rows without going through domain validation
+- **Change tracking** — EF Core watches objects added via `db.X.Add()`; `SaveChangesAsync` sends all pending changes to DB in one transaction; if it fails, nothing is saved
+- **Why direct DbContext in endpoints is wrong** — untestable (can't replace DB in unit tests), violates Single Responsibility (endpoint does too much); this motivates the Repository Pattern
 
 ### Next Step
 
-**Phase 1 — Step 5: Basic CRUD directly against DbContext**
+**Phase 1 — Step 6: Understand the problem / Phase 2 begins**
 
-Steps 1–4 are complete.
+Steps 1–5 are complete. Phase 1 is done.
 
-**What was built in Step 3:**
-- `Macronutrients` extended with `Fiber` and `Salt` properties (all tests updated)
-- All domain entities converted to `sealed class` with `Guid Id { get; private init; } = Guid.NewGuid()`
-- `DailyLog` now receives `Guid userId` in constructor and stores `UserId`
-- `IngredientEntry` converted from `record` to `class`
-- `DailyLogService.GetOrCreateAsync` updated to receive `Guid userId`
-- `Program.cs` uses hardcoded `tempUserId` with TODO comment until Phase 4 (Auth)
-- Configurations created for all entities:
-  - `IngredientConfiguration` — owned type for `Macronutrients` (Protein, Carbs, Fat, Fiber, Salt), unique index on Name
-  - `UserConfiguration` — owned type for `Email`, unique index on Email, max length 254
-  - `IngredientEntryConfiguration` — owned type for `Grams`, FK to Ingredient (shadow "IngredientId"); FK to Dish defined only in DishConfiguration
-  - `DishConfiguration` — HasMany Entries with FK "DishId"
-  - `MealConfiguration` — HasMany Dishes with FK "MealId", enum Type stored as string
-  - `DailyLogConfiguration` — HasMany Meals with FK "DailyLogId", UserId required
-- Private parameterless constructors added to `Ingredient`, `User`, `IngredientEntry` for EF Core materialization
+**What was built in Step 5:**
+- `POST /ingredients` endpoint in `Program.cs` — saves directly to `AppDbContext` (intentionally no repository/service)
+- `CreateIngredientRequest` DTO in `Api/DTOs/`
+- `requests.http` at solution root for manual testing (VS Code REST Client extension)
+- End-to-end verified: HTTP request → domain object → EF Core → PostgreSQL row confirmed
 
-**What was built in Step 4:**
-- `dotnet-ef` tool installed globally
-- `Microsoft.EntityFrameworkCore.Design` added to Api project
-- `InitialCreate` migration generated and applied to PostgreSQL
-- Schema validated: 6 tables created, owned types flattened as columns, indexes and FKs confirmed
-
-**Immediate next actions (Step 5):**
-- Write a POST /ingredients endpoint that saves directly to DbContext (no repository, no service)
-- Understand SaveChangesAsync and change tracking hands-on
-- Then understand why this approach has problems (motivates Repository Pattern in Phase 2)
+**Immediate next actions (Phase 2):**
+- Introduce the Repository Pattern — abstract DbContext behind an interface
+- Move `IIngredientRepository` to Application layer (DIP)
+- Move implementation to Infrastructure layer
+- Refactor `POST /ingredients` to go through the repository
 
 ---
 
