@@ -12,6 +12,8 @@ public sealed class IngredientEntry
     public Macronutrients Macros => ScaleMacros(Ingredient.MacrosPer100g, Grams);
     public int Calories => Macros.Calories;
 
+    private IngredientEntry() { } // For EF Core only
+
     public IngredientEntry(Ingredient ingredient, Grams grams)
     {
         Ingredient = ingredient ?? throw new ArgumentNullException(nameof(ingredient));

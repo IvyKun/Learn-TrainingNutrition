@@ -22,12 +22,6 @@ public class IngredientEntryConfiguration : IEntityTypeConfiguration<IngredientE
         builder.Ignore(x => x.Macros);
         builder.Ignore(x => x.Calories);
 
-       // Relationship: each IngredientEntry belongs to one Dish
-        builder.HasOne<Dish>()
-            .WithMany()
-            .HasForeignKey("DishId")
-            .IsRequired();
-
         // Relationship: each IngredientEntry references one Ingredient
         builder.HasOne(x => x.Ingredient)
             .WithMany()

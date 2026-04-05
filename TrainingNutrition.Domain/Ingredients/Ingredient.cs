@@ -11,6 +11,8 @@ public sealed class Ingredient
 
     public int CaloriesPer100g => MacrosPer100g.Calories;
 
+    private Ingredient() { } // For EF Core only
+    
     public Ingredient(string name, Macronutrients macrosPer100g)
     {
         Name = ValidateName(name);

@@ -87,16 +87,16 @@ The student can explain the following with their own words:
 - **Where DTOs live** — HTTP response DTOs belong in the API layer, not Application
 - **CancellationToken** — signals cancellation if client disconnects; all async I/O methods should accept one
 - **CQRS + Mediator (conceptual)** — Query = read-only request, Command = state change; endpoint sends message to `IMediator`, handler processes it; nobody talks to each other directly
+- **Migrations** — EF Core reads C# classes + Fluent API configurations and generates versioned SQL files; `migrations add` generates the file, `database update` applies it to the DB; each migration is a snapshot of a schema change
+- **Fluent API** — method chaining to configure EF Core mappings (column names, lengths, indexes, relationships) in Infrastructure; preferred over Data Annotations because it keeps the domain free of EF Core dependencies (D of SOLID)
+- **Owned types** — value objects mapped as columns inside the owner's table (no separate table); `OwnsOne` in Fluent API; e.g. `Macronutrients` flattened into `Ingredients` table
+- **Private EF Core constructor** — entities with owned types or navigation properties in their constructor need a `private Entity() { }` so EF Core can materialize instances from DB rows without going through domain validation
 
 ### Next Step
 
-**Phase 1 — Step 4: Migrations**
+**Phase 1 — Step 5: Basic CRUD directly against DbContext**
 
-Steps 1, 2 and 3 are complete.
-
-**Step 3 is done except for one pending action:**
-- Add remaining `DbSet<T>` to `AppDbContext` (only `DbSet<Ingredient>` exists currently)
-- Then: install EF Core tools, add `Microsoft.EntityFrameworkCore.Design` to Api project, run first migration
+Steps 1–4 are complete.
 
 **What was built in Step 3:**
 - `Macronutrients` extended with `Fiber` and `Salt` properties (all tests updated)
@@ -108,18 +108,22 @@ Steps 1, 2 and 3 are complete.
 - Configurations created for all entities:
   - `IngredientConfiguration` — owned type for `Macronutrients` (Protein, Carbs, Fat, Fiber, Salt), unique index on Name
   - `UserConfiguration` — owned type for `Email`, unique index on Email, max length 254
-  - `IngredientEntryConfiguration` — owned type for `Grams`, FK to Dish (shadow "DishId"), FK to Ingredient (shadow "IngredientId")
+  - `IngredientEntryConfiguration` — owned type for `Grams`, FK to Ingredient (shadow "IngredientId"); FK to Dish defined only in DishConfiguration
   - `DishConfiguration` — HasMany Entries with FK "DishId"
   - `MealConfiguration` — HasMany Dishes with FK "MealId", enum Type stored as string
   - `DailyLogConfiguration` — HasMany Meals with FK "DailyLogId", UserId required
+- Private parameterless constructors added to `Ingredient`, `User`, `IngredientEntry` for EF Core materialization
 
-**Immediate next actions:**
-1. Add missing `DbSet<T>` to `AppDbContext` (User, Dish, IngredientEntry, Meal, DailyLog)
-2. `dotnet tool install --global dotnet-ef`
-3. `dotnet add TrainingNutrition.Api package Microsoft.EntityFrameworkCore.Design`
-4. Create first migration: `dotnet ef migrations add InitialCreate --project TrainingNutrition.Infrastructure --startup-project TrainingNutrition.Api`
-5. Apply migration: `dotnet ef database update --project TrainingNutrition.Infrastructure --startup-project TrainingNutrition.Api`
-6. Inspect real tables in DB to validate schema
+**What was built in Step 4:**
+- `dotnet-ef` tool installed globally
+- `Microsoft.EntityFrameworkCore.Design` added to Api project
+- `InitialCreate` migration generated and applied to PostgreSQL
+- Schema validated: 6 tables created, owned types flattened as columns, indexes and FKs confirmed
+
+**Immediate next actions (Step 5):**
+- Write a POST /ingredients endpoint that saves directly to DbContext (no repository, no service)
+- Understand SaveChangesAsync and change tracking hands-on
+- Then understand why this approach has problems (motivates Repository Pattern in Phase 2)
 
 ---
 
@@ -157,8 +161,9 @@ TrainingNutrition/                        ← solution root
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
 │   └── Users/        (User)
-├── TrainingNutrition.Infrastructure/     🔄 WIP (Phase 1 Step 3 done)
-│   ├── AppDbContext.cs                   (DbSet<Ingredient> only — rest pending)
+├── TrainingNutrition.Infrastructure/     🔄 WIP (Phase 1 Steps 3-4 done)
+│   ├── AppDbContext.cs                   (all DbSet<T> registered)
+│   ├── Migrations/                       (InitialCreate applied ✅)
 │   └── Configurations/
 │       ├── IngredientConfiguration.cs
 │       ├── UserConfiguration.cs

@@ -8,6 +8,8 @@ public sealed class User
     public string Name { get; private set; }
     public Email Email { get; private set; }
 
+    private User() { } // For EF Core only
+
     public User(Guid id, string name, Email email)
     {
         if (id == Guid.Empty)
