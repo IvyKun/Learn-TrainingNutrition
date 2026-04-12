@@ -6,6 +6,7 @@ using TrainingNutrition.Application.Services;
 using TrainingNutrition.Domain.Common;
 using TrainingNutrition.Domain.Ingredients;
 using TrainingNutrition.Infrastructure;
+using TrainingNutrition.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddOpenApi();
 // DI registrations
 builder.Services.AddSingleton<IDailyLogRepository, InMemoryDailyLogRepository>();
 builder.Services.AddScoped<DailyLogService>();
+builder.Services.AddScoped<IIngredientRepository, EfIngredientRepository>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -45,14 +47,14 @@ app.MapGet("/dailylogs/{date}", async (
 .WithName("GetDailyLog");
 
 // POST /ingredients
-app.MapPost("/ingredients", async (CreateIngredientRequest request, AppDbContext db, CancellationToken ct) =>
+app.MapPost("/ingredients", async (CreateIngredientRequest request, 
+IIngredientRepository repository, 
+CancellationToken cancellationToken) =>
 {
     var macros = new Macronutrients(request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
     var ingredient = new Ingredient(request.Name, macros);
 
-    db.Ingredients.Add(ingredient);
-
-    await db.SaveChangesAsync(ct);
+    await repository.AddAsync(ingredient, cancellationToken);
 
     return Results.Created($"/ingredients/{ingredient.Id}", ingredient.Id);
 

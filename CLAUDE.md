@@ -63,13 +63,18 @@ When I share my implementation:
 
 **`TrainingNutrition.Application`** — Application Layer (WIP — pre-MediatR, to be refactored)
 - `Abstractions/IDailyLogRepository.cs` — repository interface (DIP applied)
+- `Abstractions/IIngredientRepository.cs` — repository interface for Ingredient (DIP applied) ✅ Phase 2 Step 1
 - `Infrastructure/InMemoryDailyLogRepository.cs` — temporary in-memory impl ⚠️ wrong layer, move to Infrastructure in Phase 2
 - `Services/DailyLogService.cs` — `GetOrCreateAsync(DateOnly date)` ⚠️ will be replaced by MediatR handler
 
+**`TrainingNutrition.Infrastructure`** — Infrastructure Layer (WIP)
+- `Repositories/EfIngredientRepository.cs` — EF Core implementation of `IIngredientRepository` ✅ Phase 2 Step 1
+
 **`TrainingNutrition.Api`** — API Layer (WIP — no MediatR yet)
-- `Program.cs` — DI registrations + single endpoint `GET /dailylogs/{date}`
+- `Program.cs` — DI registrations + `GET /dailylogs/{date}` + `POST /ingredients` (via repository)
 - `DTOs/DailyLogResponse.cs` — `sealed record DailyLogResponse(DateOnly Date, int TotalCalories)`
-- Endpoint returns typed DTO, validates date format, delegates to service
+- `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
+- Endpoint returns typed DTO, validates date format, delegates to service/repository
 
 **`TrainingNutrition.Tests`** — Unit Tests (xUnit)
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
@@ -93,24 +98,30 @@ The student can explain the following with their own words:
 - **Private EF Core constructor** — entities with owned types or navigation properties in their constructor need a `private Entity() { }` so EF Core can materialize instances from DB rows without going through domain validation
 - **Change tracking** — EF Core watches objects added via `db.X.Add()`; `SaveChangesAsync` sends all pending changes to DB in one transaction; if it fails, nothing is saved
 - **Why direct DbContext in endpoints is wrong** — untestable (can't replace DB in unit tests), violates Single Responsibility (endpoint does too much); this motivates the Repository Pattern
+- **Repository Pattern** — interface in Application defines the contract (what), implementation in Infrastructure defines the how (EF Core); endpoint depends on the interface, not the concrete class; enables unit testing by swapping the real implementation for a fake one
+- **Constructor injection** — dependencies declared in the constructor are provided automatically by the DI framework; no manual `new`; same pattern as Unity's GetComponent but inverted (framework pushes, you don't pull)
+- **Interfaces enable testability** — same interface, different implementations: production uses EF Core, tests use a fake in-memory list; the consumer (endpoint/handler) never changes
 
 ### Next Step
 
-**Phase 1 — Step 6: Understand the problem / Phase 2 begins**
+**Phase 2 — Step 2: MediatR — Commands and Handlers**
 
-Steps 1–5 are complete. Phase 1 is done.
+Phase 2 Step 1 is complete.
 
-**What was built in Step 5:**
-- `POST /ingredients` endpoint in `Program.cs` — saves directly to `AppDbContext` (intentionally no repository/service)
-- `CreateIngredientRequest` DTO in `Api/DTOs/`
-- `requests.http` at solution root for manual testing (VS Code REST Client extension)
-- End-to-end verified: HTTP request → domain object → EF Core → PostgreSQL row confirmed
+**What was built in Phase 2 Step 1:**
+- `IIngredientRepository` interface in `Application/Abstractions/` (DIP — abstraction in Application)
+- `EfIngredientRepository` in `Infrastructure/Repositories/` (implementation depends on AppDbContext via constructor injection)
+- Project reference added: Infrastructure → Application
+- `POST /ingredients` refactored — endpoint now depends on `IIngredientRepository`, not `AppDbContext`
+- `IIngredientRepository` registered in DI as Scoped in `Program.cs`
+- End-to-end verified: HTTP → repository → EF Core → PostgreSQL
 
-**Immediate next actions (Phase 2):**
-- Introduce the Repository Pattern — abstract DbContext behind an interface
-- Move `IIngredientRepository` to Application layer (DIP)
-- Move implementation to Infrastructure layer
-- Refactor `POST /ingredients` to go through the repository
+**Immediate next actions (Phase 2 Step 2):**
+- Install MediatR in Application project
+- Create `CreateIngredientCommand` in `Application/Ingredients/`
+- Create `CreateIngredientHandler` in `Application/Ingredients/`
+- Register MediatR in `Program.cs`
+- Refactor `POST /ingredients` to send command via `IMediator` instead of constructing domain objects directly
 
 ---
 
