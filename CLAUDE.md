@@ -78,7 +78,7 @@ When I share my implementation:
 
 **`TrainingNutrition.Tests`** — Unit Tests (xUnit)
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
-- Application: `DailyLogServiceTests` (uses InMemoryRepository directly — no Moq yet)
+- Application: `DailyLogServiceTests` (uses InMemoryRepository directly), `CreateIngredientHandlerTests` (uses Moq) ✅ Phase 2 Step 2
 
 ### What's Been Understood (Concepts Confirmed)
 
@@ -101,27 +101,34 @@ The student can explain the following with their own words:
 - **Repository Pattern** — interface in Application defines the contract (what), implementation in Infrastructure defines the how (EF Core); endpoint depends on the interface, not the concrete class; enables unit testing by swapping the real implementation for a fake one
 - **Constructor injection** — dependencies declared in the constructor are provided automatically by the DI framework; no manual `new`; same pattern as Unity's GetComponent but inverted (framework pushes, you don't pull)
 - **Interfaces enable testability** — same interface, different implementations: production uses EF Core, tests use a fake in-memory list; the consumer (endpoint/handler) never changes
+- **MediatR** — mediator library that connects Commands/Queries to their Handlers; endpoint sends a message via `IMediator.Send()`, handler processes it; decouples endpoint from application logic
+- **Command pattern** — a `record` that carries the data for a state-changing operation; implements `IRequest<T>` where T is the return type; no logic, just data
+- **Handler pattern** — processes one Command or Query; implements `IRequestHandler<TCommand, TResult>`; receives dependencies via constructor injection; single responsibility
+- **Moq** — test library that generates fake implementations of interfaces at runtime; `Mock<T>` creates the fake, `.Setup()` configures behaviour, `.Object` extracts the usable instance, `.Verify()` asserts it was called correctly
+- **Unit testing handlers** — inject a `Mock<IRepository>` instead of the real EF Core implementation; no database needed; tests run in milliseconds and are fully isolated
 
 ### Next Step
 
-**Phase 2 — Step 2: MediatR — Commands and Handlers**
+**Phase 2 — Step 3: First Query + Handler (GetIngredientById or similar)**
 
-Phase 2 Step 1 is complete.
+Phase 2 Step 2 is complete.
 
-**What was built in Phase 2 Step 1:**
-- `IIngredientRepository` interface in `Application/Abstractions/` (DIP — abstraction in Application)
-- `EfIngredientRepository` in `Infrastructure/Repositories/` (implementation depends on AppDbContext via constructor injection)
-- Project reference added: Infrastructure → Application
-- `POST /ingredients` refactored — endpoint now depends on `IIngredientRepository`, not `AppDbContext`
-- `IIngredientRepository` registered in DI as Scoped in `Program.cs`
-- End-to-end verified: HTTP → repository → EF Core → PostgreSQL
+**What was built in Phase 2 Step 2:**
+- `CreateIngredientCommand` record in `Application/Ingredients/` — carries Name + macro data, returns `Guid`
+- `CreateIngredientHandler` in `Application/Ingredients/` — builds domain objects, calls repository, returns Id
+- MediatR registered in `Program.cs` via `RegisterServicesFromAssembly`
+- `POST /ingredients` refactored — endpoint sends command via `IMediator`, no domain construction in endpoint
+- `CreateIngredientHandlerTests` — 2 unit tests using Moq, no database required
+- Removed stale `Entries_ShouldBeEqual_WhenValuesAreEqual` test (IngredientEntry is now a class, not a record)
+- 67 tests passing
 
-**Immediate next actions (Phase 2 Step 2):**
-- Install MediatR in Application project
-- Create `CreateIngredientCommand` in `Application/Ingredients/`
-- Create `CreateIngredientHandler` in `Application/Ingredients/`
-- Register MediatR in `Program.cs`
-- Refactor `POST /ingredients` to send command via `IMediator` instead of constructing domain objects directly
+**Immediate next actions (Phase 2 Step 3):**
+- Add `GetByIdAsync` to `IIngredientRepository`
+- Implement in `EfIngredientRepository`
+- Create `GetIngredientByIdQuery` in `Application/Ingredients/`
+- Create `GetIngredientByIdHandler` in `Application/Ingredients/`
+- Add `GET /ingredients/{id}` endpoint
+- Unit test the handler with Moq
 
 ---
 

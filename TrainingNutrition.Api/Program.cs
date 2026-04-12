@@ -1,10 +1,10 @@
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Infrastructure;
+using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Application.Services;
-using TrainingNutrition.Domain.Common;
-using TrainingNutrition.Domain.Ingredients;
 using TrainingNutrition.Infrastructure;
 using TrainingNutrition.Infrastructure.Repositories;
 
@@ -17,7 +17,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IDailyLogRepository, InMemoryDailyLogRepository>();
 builder.Services.AddScoped<DailyLogService>();
 builder.Services.AddScoped<IIngredientRepository, EfIngredientRepository>();
-
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateIngredientHandler).Assembly));
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
@@ -48,15 +48,13 @@ app.MapGet("/dailylogs/{date}", async (
 
 // POST /ingredients
 app.MapPost("/ingredients", async (CreateIngredientRequest request, 
-IIngredientRepository repository, 
+IMediator mediator, 
 CancellationToken cancellationToken) =>
 {
-    var macros = new Macronutrients(request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
-    var ingredient = new Ingredient(request.Name, macros);
+    var command = new CreateIngredientCommand(request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
+    var id = await mediator.Send(command, cancellationToken);
 
-    await repository.AddAsync(ingredient, cancellationToken);
-
-    return Results.Created($"/ingredients/{ingredient.Id}", ingredient.Id);
+    return Results.Created($"/ingredients/{id}", id);
 
 });
 

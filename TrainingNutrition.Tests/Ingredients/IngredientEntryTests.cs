@@ -44,14 +44,4 @@ public sealed class IngredientEntryTests
         Assert.Equal(83, entry.Calories);
     }
 
-    [Fact]
-    public void Entries_ShouldBeEqual_WhenValuesAreEqual()
-    {
-        var ingredient = new Ingredient("Rice", new Macronutrients(2m, 28m, 0m, 0m, 0m));
-
-        var a = new IngredientEntry(ingredient, new Grams(80));
-        var b = new IngredientEntry(ingredient, new Grams(80));
-
-        Assert.Equal(a, b);
-    }
 }
