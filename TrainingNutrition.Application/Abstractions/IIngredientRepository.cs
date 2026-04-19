@@ -5,4 +5,6 @@ namespace TrainingNutrition.Application.Abstractions;
 public interface IIngredientRepository
 {
      Task AddAsync(Ingredient ingredient, CancellationToken cancellationToken = default);
+
+     Task<Ingredient?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 }

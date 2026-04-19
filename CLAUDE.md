@@ -106,29 +106,33 @@ The student can explain the following with their own words:
 - **Handler pattern** — processes one Command or Query; implements `IRequestHandler<TCommand, TResult>`; receives dependencies via constructor injection; single responsibility
 - **Moq** — test library that generates fake implementations of interfaces at runtime; `Mock<T>` creates the fake, `.Setup()` configures behaviour, `.Object` extracts the usable instance, `.Verify()` asserts it was called correctly
 - **Unit testing handlers** — inject a `Mock<IRepository>` instead of the real EF Core implementation; no database needed; tests run in milliseconds and are fully isolated
+- **Query pattern** — a `record` that carries the data for a read-only operation; implements `IRequest<T>`; no side effects, calling it N times leaves state unchanged
+- **Why DTOs must not expose domain types** — domain types are internal contracts; exposing them couples external consumers to internal structure; flatten or map to a dedicated response record instead
+- **Moq matchers** — `It.IsAny<T>()` accepts any value of type T for that argument; use for parameters irrelevant to the test (e.g. CancellationToken); use exact values for parameters that are part of what you're verifying
+- **ReturnsAsync vs Returns** — `ReturnsAsync(value)` wraps a value in `Task<T>` automatically; use `ReturnsAsync((T?)null)` with explicit cast when returning null for a nullable async method
 
 ### Next Step
 
-**Phase 2 — Step 3: First Query + Handler (GetIngredientById or similar)**
+**Phase 2 — Step 4: FluentValidation + MediatR Pipeline Behavior**
 
-Phase 2 Step 2 is complete.
+Phase 2 Step 3 is complete.
 
-**What was built in Phase 2 Step 2:**
-- `CreateIngredientCommand` record in `Application/Ingredients/` — carries Name + macro data, returns `Guid`
-- `CreateIngredientHandler` in `Application/Ingredients/` — builds domain objects, calls repository, returns Id
-- MediatR registered in `Program.cs` via `RegisterServicesFromAssembly`
-- `POST /ingredients` refactored — endpoint sends command via `IMediator`, no domain construction in endpoint
-- `CreateIngredientHandlerTests` — 2 unit tests using Moq, no database required
-- Removed stale `Entries_ShouldBeEqual_WhenValuesAreEqual` test (IngredientEntry is now a class, not a record)
-- 67 tests passing
+**What was built in Phase 2 Step 3:**
+- `GetByIdAsync` added to `IIngredientRepository` — returns `Ingredient?`
+- `EfIngredientRepository.GetByIdAsync` — uses `FindAsync([id], cancellationToken)` (EF Core cache-aware)
+- `IngredientResponse` record in `Application/Ingredients/` — flat DTO, no domain types, includes `CaloriesPer100g`
+- `GetIngredientByIdQuery` in `Application/Ingredients/` — first Query of the project
+- `GetIngredientByIdHandler` in `Application/Ingredients/` — early return on null, maps domain to DTO
+- `GET /ingredients/{id}` endpoint — returns 404 or 200 via IMediator
+- `GetIngredientByIdHandlerTests` — 2 unit tests with Moq: found + not found cases
+- 69 tests passing
 
-**Immediate next actions (Phase 2 Step 3):**
-- Add `GetByIdAsync` to `IIngredientRepository`
-- Implement in `EfIngredientRepository`
-- Create `GetIngredientByIdQuery` in `Application/Ingredients/`
-- Create `GetIngredientByIdHandler` in `Application/Ingredients/`
-- Add `GET /ingredients/{id}` endpoint
-- Unit test the handler with Moq
+**Immediate next actions (Phase 2 Step 4):**
+- Install FluentValidation + FluentValidation.DependencyInjectionExtensions
+- Create `CreateIngredientCommandValidator` in `Application/Ingredients/`
+- Create `ValidationBehavior<TRequest, TResponse>` pipeline behavior in `Application/`
+- Register behavior in `Program.cs` via `AddTransient<IPipelineBehavior<,>, ValidationBehavior<,>>`
+- Test that invalid commands are rejected before reaching the handler
 
 ---
 

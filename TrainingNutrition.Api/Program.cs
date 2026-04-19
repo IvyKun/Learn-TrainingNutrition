@@ -58,4 +58,22 @@ CancellationToken cancellationToken) =>
 
 });
 
+// GET /ingredients/{id}
+app.MapGet("/ingredients/{id}", async (
+Guid id, 
+IMediator mediator, 
+CancellationToken cancellationToken) =>
+{
+    var query = new GetIngredientByIdQuery(id);
+    var ingredientResponse = await mediator.Send(query, cancellationToken);
+
+    if(ingredientResponse == null)
+    {
+        return Results.NotFound();    
+    }
+
+    return Results.Ok(ingredientResponse);
+
+});
+
 app.Run();

@@ -19,4 +19,9 @@ public class EfIngredientRepository : IIngredientRepository
 
         await _db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Ingredient?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _db.Ingredients.FindAsync([id], cancellationToken);
+    }
 }
