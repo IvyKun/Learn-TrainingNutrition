@@ -29,3 +29,16 @@ Content-Type: application/json
   "fiber": 0.0,
   "salt": 1.1
 }
+
+### Create ingredient bad macro to validate
+POST http://localhost:5119/ingredients
+Content-Type: application/json
+
+{
+  "name": "Tuna",
+  "protein": 21.0,
+  "carbs": 1.0,
+  "fat": -1.0,
+  "fiber": 0.0,
+  "salt": 1.1
+}

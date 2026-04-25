@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TrainingNutrition.Api;
 using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Behaviors;
@@ -24,6 +25,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateIngredientCommandVali
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
@@ -80,5 +84,7 @@ CancellationToken cancellationToken) =>
     return Results.Ok(ingredientResponse);
 
 });
+
+app.UseExceptionHandler();
 
 app.Run();
