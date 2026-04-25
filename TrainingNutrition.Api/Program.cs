@@ -1,7 +1,9 @@
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
+using TrainingNutrition.Application.Behaviors;
 using TrainingNutrition.Application.Infrastructure;
 using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Application.Services;
@@ -18,6 +20,9 @@ builder.Services.AddSingleton<IDailyLogRepository, InMemoryDailyLogRepository>()
 builder.Services.AddScoped<DailyLogService>();
 builder.Services.AddScoped<IIngredientRepository, EfIngredientRepository>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateIngredientHandler).Assembly));
+builder.Services.AddValidatorsFromAssemblyContaining<CreateIngredientCommandValidator>();
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();

@@ -10,3 +10,22 @@ Content-Type: application/json
   "fiber": 0.0,
   "salt": 1.1
 }
+
+### Get ingredient by id
+GET http://localhost:5119/ingredients/14a16792-aa8f-431a-a684-208e2df3d90e
+
+### Get ingredient not found
+GET http://localhost:5119/ingredients/00000000-0000-0000-0000-000000000099
+
+### Create ingredient empty name to validate
+POST http://localhost:5119/ingredients
+Content-Type: application/json
+
+{
+  "name": "",
+  "protein": 21.0,
+  "carbs": 1.0,
+  "fat": 1.0,
+  "fiber": 0.0,
+  "salt": 1.1
+}
