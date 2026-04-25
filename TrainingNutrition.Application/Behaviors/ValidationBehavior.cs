@@ -19,6 +19,6 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
             throw new ValidationException(failures);
         }
 
-        return next();
+        return next(cancellationToken);
     }
 }
