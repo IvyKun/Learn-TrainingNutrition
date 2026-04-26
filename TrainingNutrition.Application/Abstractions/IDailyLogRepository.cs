@@ -6,5 +6,5 @@ public interface IDailyLogRepository
 {
     Task<DailyLog?> GetByDateAsync(DateOnly date, CancellationToken cancellationToken = default);
 
-    Task SaveAsync(DailyLog dailyLog, CancellationToken cancellationToken = default);
+    Task AddAsync(DailyLog dailyLog, CancellationToken cancellationToken = default);
 }

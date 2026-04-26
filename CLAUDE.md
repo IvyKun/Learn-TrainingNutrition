@@ -61,24 +61,34 @@ When I share my implementation:
 - Enums: `MealType`
 - All validation lives in constructors (no data annotations)
 
-**`TrainingNutrition.Application`** — Application Layer (WIP — pre-MediatR, to be refactored)
-- `Abstractions/IDailyLogRepository.cs` — repository interface (DIP applied)
-- `Abstractions/IIngredientRepository.cs` — repository interface for Ingredient (DIP applied) ✅ Phase 2 Step 1
-- `Infrastructure/InMemoryDailyLogRepository.cs` — temporary in-memory impl ⚠️ wrong layer, move to Infrastructure in Phase 2
-- `Services/DailyLogService.cs` — `GetOrCreateAsync(DateOnly date)` ⚠️ will be replaced by MediatR handler
+**`TrainingNutrition.Application`** — Application Layer ✅ Phase 2 Complete
+- `Abstractions/IDailyLogRepository.cs` — repository interface (`GetByDateAsync`, `AddAsync`)
+- `Abstractions/IIngredientRepository.cs` — repository interface (`AddAsync`, `GetByIdAsync`)
+- `Ingredients/CreateIngredientCommand.cs` + `CreateIngredientHandler.cs` — creates ingredient, returns `Guid`
+- `Ingredients/GetIngredientByIdQuery.cs` + `GetIngredientByIdHandler.cs` — returns `IngredientResponse?`
+- `Ingredients/IngredientResponse.cs` — flat DTO (no domain types), includes `CaloriesPer100g`
+- `Ingredients/CreateIngredientCommandValidator.cs` — FluentValidation rules for ingredient creation
+- `DailyLogs/GetOrCreateDailyLogCommand.cs` + `GetOrCreateDailyLogHandler.cs` — gets or creates daily log, returns `DailyLogResponse`
+- `DailyLogs/DailyLogResponse.cs` — flat DTO with `Date` and `TotalCalories`
+- `Behaviors/ValidationBehavior.cs` — generic MediatR pipeline behavior, validates all commands before handler
 
-**`TrainingNutrition.Infrastructure`** — Infrastructure Layer (WIP)
-- `Repositories/EfIngredientRepository.cs` — EF Core implementation of `IIngredientRepository` ✅ Phase 2 Step 1
+**`TrainingNutrition.Infrastructure`** — Infrastructure Layer ✅ Phase 2 Complete
+- `AppDbContext.cs` — all `DbSet<T>` registered
+- `Configurations/` — Fluent API configs for all 6 entities
+- `Repositories/EfIngredientRepository.cs` — EF Core impl of `IIngredientRepository`
+- `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
+- `Migrations/` — `InitialCreate` applied ✅
 
-**`TrainingNutrition.Api`** — API Layer (WIP — no MediatR yet)
-- `Program.cs` — DI registrations + `GET /dailylogs/{date}` + `POST /ingredients` (via repository)
-- `DTOs/DailyLogResponse.cs` — `sealed record DailyLogResponse(DateOnly Date, int TotalCalories)`
+**`TrainingNutrition.Api`** — API Layer ✅ All endpoints via MediatR
+- `Program.cs` — DI registrations, all 3 endpoints via `IMediator`
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
-- Endpoint returns typed DTO, validates date format, delegates to service/repository
+- `GET /dailylogs/{date}` → `GetOrCreateDailyLogCommand` → `DailyLogResponse`
+- `POST /ingredients` → `CreateIngredientCommand` → `201 Created`
+- `GET /ingredients/{id}` → `GetIngredientByIdQuery` → `200 / 404`
 
-**`TrainingNutrition.Tests`** — Unit Tests (xUnit)
+**`TrainingNutrition.Tests`** — Unit Tests (xUnit) — 72 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
-- Application: `DailyLogServiceTests` (uses InMemoryRepository directly), `CreateIngredientHandlerTests` (uses Moq) ✅ Phase 2 Step 2
+- Application: `CreateIngredientHandlerTests`, `GetIngredientByIdHandlerTests`, `GetOrCreateDailyLogHandlerTests`, `ValidationBehaviorTests` (all with Moq)
 
 ### What's Been Understood (Concepts Confirmed)
 
@@ -110,29 +120,22 @@ The student can explain the following with their own words:
 - **Why DTOs must not expose domain types** — domain types are internal contracts; exposing them couples external consumers to internal structure; flatten or map to a dedicated response record instead
 - **Moq matchers** — `It.IsAny<T>()` accepts any value of type T for that argument; use for parameters irrelevant to the test (e.g. CancellationToken); use exact values for parameters that are part of what you're verifying
 - **ReturnsAsync vs Returns** — `ReturnsAsync(value)` wraps a value in `Task<T>` automatically; use `ReturnsAsync((T?)null)` with explicit cast when returning null for a nullable async method
+- **Moq Verify** — `.Verify(r => r.Method(...), Times.Once)` asserts a method was called; `Times.Never` asserts it was never called; essential for testing side effects (e.g. that AddAsync is called on create but not on fetch)
+- **Command vs Query naming** — when a method name contains "Create", "Add", "Update", "Delete" → Command; pure reads → Query; when unsure, default to Command (safer: side effects are explicit)
+- **GetOrCreate is a Command** — even though it reads first, it may write; calling it N times is not idempotent → Command, not Query
+- **ValidationBehavior is generic** — `ValidationBehavior<TRequest, TResponse>` intercepts all MediatR messages; the specific rules live in validators per command; Open/Closed: add validators without touching the behavior
+- **Handler DTOs live in Application, not API** — the handler maps domain → DTO and returns it; the endpoint passes it through without touching domain types; API layer never imports domain
 
 ### Next Step
 
-**Phase 2 — Step 4: FluentValidation + MediatR Pipeline Behavior**
+**Phase 3 — API Layer**
 
-Phase 2 Step 3 is complete.
+Phase 2 is complete. All endpoints use MediatR, EF Core for persistence, FluentValidation for input validation. No legacy code remains.
 
-**What was built in Phase 2 Step 3:**
-- `GetByIdAsync` added to `IIngredientRepository` — returns `Ingredient?`
-- `EfIngredientRepository.GetByIdAsync` — uses `FindAsync([id], cancellationToken)` (EF Core cache-aware)
-- `IngredientResponse` record in `Application/Ingredients/` — flat DTO, no domain types, includes `CaloriesPer100g`
-- `GetIngredientByIdQuery` in `Application/Ingredients/` — first Query of the project
-- `GetIngredientByIdHandler` in `Application/Ingredients/` — early return on null, maps domain to DTO
-- `GET /ingredients/{id}` endpoint — returns 404 or 200 via IMediator
-- `GetIngredientByIdHandlerTests` — 2 unit tests with Moq: found + not found cases
-- 69 tests passing
-
-**Immediate next actions (Phase 2 Step 4):**
-- Install FluentValidation + FluentValidation.DependencyInjectionExtensions
-- Create `CreateIngredientCommandValidator` in `Application/Ingredients/`
-- Create `ValidationBehavior<TRequest, TResponse>` pipeline behavior in `Application/`
-- Register behavior in `Program.cs` via `AddTransient<IPipelineBehavior<,>, ValidationBehavior<,>>`
-- Test that invalid commands are rejected before reaching the handler
+**Immediate next actions (Phase 3):**
+- Endpoint organization — extract endpoints from `Program.cs` into extension methods (one file per resource)
+- Swagger/OpenAPI — configure proper documentation with request/response schemas
+- Integration tests with `WebApplicationFactory` — test the full HTTP stack against a real (test) database
 
 ---
 
@@ -170,9 +173,12 @@ TrainingNutrition/                        ← solution root
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
 │   └── Users/        (User)
-├── TrainingNutrition.Infrastructure/     🔄 WIP (Phase 1 Steps 3-4 done)
+├── TrainingNutrition.Infrastructure/     ✅ Phase 2 Done
 │   ├── AppDbContext.cs                   (all DbSet<T> registered)
 │   ├── Migrations/                       (InitialCreate applied ✅)
+│   ├── Repositories/
+│   │   ├── EfIngredientRepository.cs
+│   │   └── EfDailyLogRepository.cs
 │   └── Configurations/
 │       ├── IngredientConfiguration.cs
 │       ├── UserConfiguration.cs
@@ -180,15 +186,17 @@ TrainingNutrition/                        ← solution root
 │       ├── DishConfiguration.cs
 │       ├── MealConfiguration.cs
 │       └── DailyLogConfiguration.cs
-├── TrainingNutrition.Application/        🔄 WIP
-│   ├── Abstractions/ (IDailyLogRepository)
-│   ├── Infrastructure/ (InMemoryDailyLogRepository — temporary)
-│   └── Services/     (DailyLogService)
-├── TrainingNutrition.Api/                🔄 WIP
-│   ├── DTOs/         (DailyLogResponse)
-│   └── Program.cs    (DI + GET /dailylogs/{date} + AppDbContext registered)
-└── TrainingNutrition.Tests/              🔄 WIP
-    ├── Application/  (DailyLogServiceTests)
+├── TrainingNutrition.Application/        ✅ Phase 2 Done
+│   ├── Abstractions/ (IIngredientRepository, IDailyLogRepository)
+│   ├── Behaviors/    (ValidationBehavior)
+│   ├── Ingredients/  (Command, Query, Handler, Validator, IngredientResponse)
+│   └── DailyLogs/    (Command, Handler, DailyLogResponse)
+├── TrainingNutrition.Api/                🔄 Phase 3 WIP
+│   ├── DTOs/         (CreateIngredientRequest)
+│   └── Program.cs    (DI + all 3 endpoints via IMediator)
+└── TrainingNutrition.Tests/              🔄 WIP — 72 passing
+    ├── Application/  (CreateIngredientHandlerTests, GetIngredientByIdHandlerTests,
+    │                  GetOrCreateDailyLogHandlerTests, ValidationBehaviorTests)
     ├── Common/       (EmailTests, GramsTests, MacronutrientsTests)
     ├── Dishes/       (DishTests)
     ├── Ingredients/  (IngredientTests, IngredientEntryTests)
@@ -253,7 +261,7 @@ This phase is NOT about new syntax — it's about understanding WHY things are d
 - Entities, Value Objects with validation in constructors
 - Unit tests for all domain types
 
-### 🔄 Phase 1 — EF Core Foundations (Database First, Patterns Later)
+### ✅ Phase 1 — EF Core Foundations (Database First, Patterns Later)
 **Goal:** Understand EF Core from scratch before abstracting it behind patterns.
 You must understand the tool before learning how to hide it.
 
@@ -298,24 +306,19 @@ You must understand the tool before learning how to hide it.
 Key concepts: **ORM, DbContext, DbSet, Migrations, Fluent API, Change Tracking**
 Key SOLID: **Single Responsibility** (violation first, then fix — so the principle feels real)
 
-### 📋 Phase 2 — Application Layer + Clean Architecture
+### ✅ Phase 2 — Application Layer + Clean Architecture
 **Goal:** Now that you understand EF Core, layer Clean Architecture and CQRS on top of it properly.
 
-- Introduce the Repository Pattern — abstract the DbContext behind an interface
-- Move repository interfaces to `Application` layer (DIP applied)
-- Move repository implementations to `Infrastructure` layer
-- MediatR setup — what it is and why it replaces direct service calls
-- First Command + Handler (e.g. `CreateIngredientCommand`)
-- First Query + Handler (e.g. `GetDailyLogQuery`)
-- FluentValidation + MediatR pipeline behavior
-- Unit tests for handlers (with mocked repositories using Moq)
-
-> **Current state:** `DailyLogService` and `IDailyLogRepository` exist but were built before MediatR. These will be refactored into Commands/Queries during this phase.
+- Repository Pattern — interfaces in Application, implementations in Infrastructure ✅
+- MediatR — Commands, Queries, Handlers for Ingredients and DailyLogs ✅
+- FluentValidation + MediatR Pipeline Behavior ✅
+- Unit tests for all handlers with Moq ✅
+- Legacy code removed (DailyLogService, InMemoryDailyLogRepository) ✅
 
 Key patterns: **Repository, CQRS, Mediator, Pipeline Behavior**
 Key SOLID: **Dependency Inversion, Single Responsibility, Open/Closed**
 
-### 📋 Phase 3 — API Layer
+### 🔄 Phase 3 — API Layer
 **Goal:** HTTP interface, nothing else
 
 - Endpoint organization (endpoint groups / extension methods)

@@ -5,9 +5,8 @@ using TrainingNutrition.Api;
 using TrainingNutrition.Api.DTOs;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Behaviors;
-using TrainingNutrition.Application.Infrastructure;
+using TrainingNutrition.Application.DailyLogs;
 using TrainingNutrition.Application.Ingredients;
-using TrainingNutrition.Application.Services;
 using TrainingNutrition.Infrastructure;
 using TrainingNutrition.Infrastructure.Repositories;
 
@@ -17,8 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 // DI registrations
-builder.Services.AddSingleton<IDailyLogRepository, InMemoryDailyLogRepository>();
-builder.Services.AddScoped<DailyLogService>();
+builder.Services.AddScoped<IDailyLogRepository, EfDailyLogRepository>();
 builder.Services.AddScoped<IIngredientRepository, EfIngredientRepository>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateIngredientHandler).Assembly));
 builder.Services.AddValidatorsFromAssemblyContaining<CreateIngredientCommandValidator>();
@@ -41,7 +39,7 @@ if (app.Environment.IsDevelopment())
 // GET /dailylogs/2026-02-21
 app.MapGet("/dailylogs/{date}", async (
     string date,
-    DailyLogService service,
+    IMediator mediator, 
     CancellationToken cancellationToken) =>
 {
     if (!DateOnly.TryParse(date, out var parsedDate))
@@ -49,16 +47,19 @@ app.MapGet("/dailylogs/{date}", async (
 
    // TODO: replace with authenticated user ID from JWT token (Phase 4 - Auth)
     var tempUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-    var log = await service.GetOrCreateAsync(tempUserId, parsedDate, cancellationToken);
 
-    return Results.Ok(new DailyLogResponse(log.Date, log.GetTotalCalories()));
+    var command = new GetOrCreateDailyLogCommand(tempUserId, parsedDate);
+    var dailyLogResponse = await mediator.Send(command, cancellationToken);
+
+    return Results.Ok(dailyLogResponse);
 })
 .WithName("GetDailyLog");
 
 // POST /ingredients
-app.MapPost("/ingredients", async (CreateIngredientRequest request, 
-IMediator mediator, 
-CancellationToken cancellationToken) =>
+app.MapPost("/ingredients", async (
+    CreateIngredientRequest request, 
+    IMediator mediator, 
+    CancellationToken cancellationToken) =>
 {
     var command = new CreateIngredientCommand(request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
     var id = await mediator.Send(command, cancellationToken);
@@ -69,9 +70,9 @@ CancellationToken cancellationToken) =>
 
 // GET /ingredients/{id}
 app.MapGet("/ingredients/{id}", async (
-Guid id, 
-IMediator mediator, 
-CancellationToken cancellationToken) =>
+    Guid id, 
+    IMediator mediator, 
+    CancellationToken cancellationToken) =>
 {
     var query = new GetIngredientByIdQuery(id);
     var ingredientResponse = await mediator.Send(query, cancellationToken);

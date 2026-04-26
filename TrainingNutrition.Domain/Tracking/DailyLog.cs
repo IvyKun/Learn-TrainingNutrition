@@ -14,6 +14,8 @@ public sealed class DailyLog
     public DateOnly Date { get; }
     public IReadOnlyList<Meal> Meals => _meals;
 
+    private DailyLog() { } // For EF Core only
+     
     public DailyLog(Guid userId, DateOnly date)
     {
         UserId = userId;
