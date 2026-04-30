@@ -1,11 +1,11 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using TrainingNutrition.Api;
-using TrainingNutrition.Api.DTOs;
+using TrainingNutrition.Api.Endpoints;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Behaviors;
-using TrainingNutrition.Application.DailyLogs;
 using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Infrastructure;
 using TrainingNutrition.Infrastructure.Repositories;
@@ -32,59 +32,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 //app.UseHttpsRedirection();
 
-// GET /dailylogs/2026-02-21
-app.MapGet("/dailylogs/{date}", async (
-    string date,
-    IMediator mediator, 
-    CancellationToken cancellationToken) =>
-{
-    if (!DateOnly.TryParse(date, out var parsedDate))
-        return Results.BadRequest("Invalid date format. Use yyyy-MM-dd.");
 
-   // TODO: replace with authenticated user ID from JWT token (Phase 4 - Auth)
-    var tempUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-
-    var command = new GetOrCreateDailyLogCommand(tempUserId, parsedDate);
-    var dailyLogResponse = await mediator.Send(command, cancellationToken);
-
-    return Results.Ok(dailyLogResponse);
-})
-.WithName("GetDailyLog");
-
-// POST /ingredients
-app.MapPost("/ingredients", async (
-    CreateIngredientRequest request, 
-    IMediator mediator, 
-    CancellationToken cancellationToken) =>
-{
-    var command = new CreateIngredientCommand(request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
-    var id = await mediator.Send(command, cancellationToken);
-
-    return Results.Created($"/ingredients/{id}", id);
-
-});
-
-// GET /ingredients/{id}
-app.MapGet("/ingredients/{id}", async (
-    Guid id, 
-    IMediator mediator, 
-    CancellationToken cancellationToken) =>
-{
-    var query = new GetIngredientByIdQuery(id);
-    var ingredientResponse = await mediator.Send(query, cancellationToken);
-
-    if(ingredientResponse == null)
-    {
-        return Results.NotFound();    
-    }
-
-    return Results.Ok(ingredientResponse);
-
-});
+app.MapIngredientsEndpoints();
+app.MapDailyLogsEndpoints();
 
 app.UseExceptionHandler();
 

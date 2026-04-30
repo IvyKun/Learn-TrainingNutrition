@@ -79,12 +79,12 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅
 
-**`TrainingNutrition.Api`** — API Layer ✅ All endpoints via MediatR
-- `Program.cs` — DI registrations, all 3 endpoints via `IMediator`
+**`TrainingNutrition.Api`** — API Layer 🔄 Phase 3 In Progress
+- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
-- `GET /dailylogs/{date}` → `GetOrCreateDailyLogCommand` → `DailyLogResponse`
-- `POST /ingredients` → `CreateIngredientCommand` → `201 Created`
-- `GET /ingredients/{id}` → `GetIngredientByIdQuery` → `200 / 404`
+- `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
+- `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400), with OpenAPI metadata
+- Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development
 
 **`TrainingNutrition.Tests`** — Unit Tests (xUnit) — 72 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
@@ -125,16 +125,17 @@ The student can explain the following with their own words:
 - **GetOrCreate is a Command** — even though it reads first, it may write; calling it N times is not idempotent → Command, not Query
 - **ValidationBehavior is generic** — `ValidationBehavior<TRequest, TResponse>` intercepts all MediatR messages; the specific rules live in validators per command; Open/Closed: add validators without touching the behavior
 - **Handler DTOs live in Application, not API** — the handler maps domain → DTO and returns it; the endpoint passes it through without touching domain types; API layer never imports domain
+- **Endpoint extension methods** — static class with extension method on `WebApplication`; one file per resource in `Endpoints/`; `Program.cs` only calls `app.MapXxxEndpoints()` — S of SOLID applied to the API layer
+- **OpenAPI metadata decorators** — `.WithTags()`, `.WithSummary()`, `.WithName()`, `.Produces<T>()`, `.ProducesProblem()`, `.ProducesValidationProblem()` describe the endpoint contract without changing behavior; only annotate responses that actually happen in code
+- **Scalar** — modern interactive UI for .NET 9/10 that consumes the OpenAPI JSON spec; registered via `app.MapScalarApiReference()` in Development; accessible at `/scalar/v1`
 
 ### Next Step
 
 **Phase 3 — API Layer**
 
-Phase 2 is complete. All endpoints use MediatR, EF Core for persistence, FluentValidation for input validation. No legacy code remains.
+Endpoint organization ✅ and Swagger/OpenAPI ✅ complete.
 
-**Immediate next actions (Phase 3):**
-- Endpoint organization — extract endpoints from `Program.cs` into extension methods (one file per resource)
-- Swagger/OpenAPI — configure proper documentation with request/response schemas
+**Remaining (Phase 3):**
 - Integration tests with `WebApplicationFactory` — test the full HTTP stack against a real (test) database
 
 ---
