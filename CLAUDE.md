@@ -79,16 +79,17 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅
 
-**`TrainingNutrition.Api`** — API Layer 🔄 Phase 3 In Progress
-- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 3 Complete
+- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
 - `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
 - `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400), with OpenAPI metadata
 - Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development
 
-**`TrainingNutrition.Tests`** — Unit Tests (xUnit) — 72 passing
+**`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 78 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
 - Application: `CreateIngredientHandlerTests`, `GetIngredientByIdHandlerTests`, `GetOrCreateDailyLogHandlerTests`, `ValidationBehaviorTests` (all with Moq)
+- Integration: `CustomWebApplicationFactory` (overrides DB to `trainingnutrition_test`, applies migrations on startup), `IngredientsIntegrationTests`, `DailyLogsIntegrationTests` (all use `IClassFixture` + `IAsyncLifetime` for per-test cleanup)
 
 ### What's Been Understood (Concepts Confirmed)
 
@@ -128,15 +129,20 @@ The student can explain the following with their own words:
 - **Endpoint extension methods** — static class with extension method on `WebApplication`; one file per resource in `Endpoints/`; `Program.cs` only calls `app.MapXxxEndpoints()` — S of SOLID applied to the API layer
 - **OpenAPI metadata decorators** — `.WithTags()`, `.WithSummary()`, `.WithName()`, `.Produces<T>()`, `.ProducesProblem()`, `.ProducesValidationProblem()` describe the endpoint contract without changing behavior; only annotate responses that actually happen in code
 - **Scalar** — modern interactive UI for .NET 9/10 that consumes the OpenAPI JSON spec; registered via `app.MapScalarApiReference()` in Development; accessible at `/scalar/v1`
+- **WebApplicationFactory** — ASP.NET Core test utility that boots the full application in memory; `WebApplicationFactory<Program>` is the entry point; `ConfigureWebHost` overrides DI registrations (e.g. swap DB connection string) before the app starts; `CreateClient()` returns an `HttpClient` wired directly to the in-memory server
+- **public partial class Program {}** — makes the implicit `Program` class visible to other assemblies (e.g. the test project); required for `WebApplicationFactory<Program>` to compile
+- **Test DB override pattern** — remove the existing `DbContextOptions<AppDbContext>` descriptor from DI, then re-register with the test connection string; the rest of the app (handlers, validators, endpoints) stays unchanged; Dependency Inversion makes this swap transparent
+- **db.Database.Migrate() in CreateHost** — applies all pending migrations to the test DB on factory startup; ensures the schema is always in sync before any test runs
+- **IAsyncLifetime** — xUnit interface with `InitializeAsync` (runs before each `[Fact]`) and `DisposeAsync` (runs after); used to clean tables between tests so each test starts from an empty DB
+- **Test isolation** — each test must be independent of state left by other tests; shared DB without cleanup causes collisions on unique constraints; cleanup goes in `InitializeAsync` (before), not `DisposeAsync` (after), so a failing test doesn't block the next one
+- **HttpClient in integration tests** — `PostAsJsonAsync` serializes an object to JSON and sends a POST; `GetAsync` sends a GET with the URL only; `ReadFromJsonAsync<T>` deserializes the response body; all from `System.Net.Http.Json`
+- **IClassFixture<T>** — xUnit mechanism to share one factory instance across all tests in a class; the factory (and its DB) is created once, not once per test; `IAsyncLifetime` handles per-test cleanup within that shared instance
 
 ### Next Step
 
-**Phase 3 — API Layer**
+**Phase 4 — Auth**
 
-Endpoint organization ✅ and Swagger/OpenAPI ✅ complete.
-
-**Remaining (Phase 3):**
-- Integration tests with `WebApplicationFactory` — test the full HTTP stack against a real (test) database
+Phase 3 complete ✅. Next: ASP.NET Core Identity + JWT authentication.
 
 ---
 
@@ -192,10 +198,13 @@ TrainingNutrition/                        ← solution root
 │   ├── Behaviors/    (ValidationBehavior)
 │   ├── Ingredients/  (Command, Query, Handler, Validator, IngredientResponse)
 │   └── DailyLogs/    (Command, Handler, DailyLogResponse)
-├── TrainingNutrition.Api/                🔄 Phase 3 WIP
+├── TrainingNutrition.Api/                ✅ Phase 3 Done
 │   ├── DTOs/         (CreateIngredientRequest)
-│   └── Program.cs    (DI + all 3 endpoints via IMediator)
-└── TrainingNutrition.Tests/              🔄 WIP — 72 passing
+│   ├── Endpoints/    (IngredientsEndpoints, DailyLogsEndpoints)
+│   └── Program.cs    (DI registrations + app.MapXxxEndpoints())
+└── TrainingNutrition.Tests/              ✅ 78 passing
+    ├── Integration/  (CustomWebApplicationFactory, IngredientsIntegrationTests,
+    │                  DailyLogsIntegrationTests)
     ├── Application/  (CreateIngredientHandlerTests, GetIngredientByIdHandlerTests,
     │                  GetOrCreateDailyLogHandlerTests, ValidationBehaviorTests)
     ├── Common/       (EmailTests, GramsTests, MacronutrientsTests)
@@ -319,7 +328,7 @@ Key SOLID: **Single Responsibility** (violation first, then fix — so the princ
 Key patterns: **Repository, CQRS, Mediator, Pipeline Behavior**
 Key SOLID: **Dependency Inversion, Single Responsibility, Open/Closed**
 
-### 🔄 Phase 3 — API Layer
+### ✅ Phase 3 — API Layer
 **Goal:** HTTP interface, nothing else
 
 - Endpoint organization (endpoint groups / extension methods)
