@@ -140,9 +140,9 @@ The student can explain the following with their own words:
 
 ### Next Step
 
-**Phase 4 — Auth**
+**Phase 4 — Auth — Step 1: Identity setup**
 
-Phase 3 complete ✅. Next: ASP.NET Core Identity + JWT authentication.
+Phase 3 complete ✅. Next: install Identity packages, adapt `AppDbContext` to `IdentityDbContext`, generate migration for Identity tables. No endpoints yet — pure infrastructure.
 
 ---
 
@@ -340,10 +340,37 @@ Key patterns: **Minimal API endpoints, Middleware, Options pattern**
 Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain logic)**
 
 ### 📋 Phase 4 — Auth
-- ASP.NET Core Identity integration
-- JWT token generation and validation
-- Refresh tokens
-- Role-based authorization
+**Step 1 — Identity setup** (infrastructure only)
+- Add `Microsoft.AspNetCore.Identity.EntityFrameworkCore` package to Infrastructure
+- Add `Microsoft.AspNetCore.Authentication.JwtBearer` package to API
+- Create `AppUser : IdentityUser` in Domain or Infrastructure
+- Adapt `AppDbContext` to extend `IdentityDbContext<AppUser>`
+- Generate and apply migration for Identity tables
+- Concept: what tables Identity creates and why
+
+**Step 2 — Register endpoint**
+- `RegisterCommand` + `RegisterHandler` in Application (uses `UserManager<AppUser>`)
+- `POST /auth/register` endpoint in API
+- Returns 201 on success, 400 on validation errors
+- Concept: how Identity hashes and stores passwords
+
+**Step 3 — Login endpoint + JWT generation**
+- `LoginCommand` + `LoginHandler` in Application
+- `POST /auth/login` endpoint in API
+- Verifies credentials via `UserManager`, generates a signed JWT on success
+- JWT secret configured in `appsettings.json` via Options pattern
+- Concept: how to build and sign a JWT in .NET
+
+**Step 4 — Protect existing endpoints**
+- Configure JWT middleware in `Program.cs` (`AddAuthentication` + `AddJwtBearer`)
+- Add `RequireAuthorization()` to ingredients and dailylogs endpoints
+- No valid token → 401 Unauthorized
+- Concept: how ASP.NET Core intercepts and validates the token before reaching the handler
+
+**Step 5 — Use the authenticated user**
+- Extract `userId` from the JWT token inside the endpoint (`HttpContext.User`)
+- Pass it to commands (DailyLog must belong to the authenticated user)
+- Concept: reading claims from `ClaimsPrincipal` inside a Minimal API endpoint
 
 ### 📋 Phase 5 — Cross-cutting Concerns
 - Logging with Serilog
