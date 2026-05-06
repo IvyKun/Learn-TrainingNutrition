@@ -72,12 +72,13 @@ When I share my implementation:
 - `DailyLogs/DailyLogResponse.cs` — flat DTO with `Date` and `TotalCalories`
 - `Behaviors/ValidationBehavior.cs` — generic MediatR pipeline behavior, validates all commands before handler
 
-**`TrainingNutrition.Infrastructure`** — Infrastructure Layer ✅ Phase 2 Complete
-- `AppDbContext.cs` — all `DbSet<T>` registered
+**`TrainingNutrition.Infrastructure`** — Infrastructure Layer ✅ Phase 4 Step 1 Complete
+- `AppDbContext.cs` — extends `IdentityDbContext<AppUser>`; all `DbSet<T>` registered; `base.OnModelCreating()` called before own configurations
+- `AppUser.cs` — `sealed class AppUser : IdentityUser`; empty for now, ready for custom properties
 - `Configurations/` — Fluent API configs for all 6 entities
 - `Repositories/EfIngredientRepository.cs` — EF Core impl of `IIngredientRepository`
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
-- `Migrations/` — `InitialCreate` applied ✅
+- `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
 **`TrainingNutrition.Api`** — API Layer ✅ Phase 3 Complete
 - `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `public partial class Program {}` at bottom for test visibility
@@ -140,9 +141,9 @@ The student can explain the following with their own words:
 
 ### Next Step
 
-**Phase 4 — Auth — Step 1: Identity setup**
+**Phase 4 — Auth — Step 2: Register endpoint**
 
-Phase 3 complete ✅. Next: install Identity packages, adapt `AppDbContext` to `IdentityDbContext`, generate migration for Identity tables. No endpoints yet — pure infrastructure.
+Phase 4 Step 1 complete ✅. Next: `RegisterCommand` + `RegisterHandler` in Application (uses `UserManager<AppUser>`), `POST /auth/register` endpoint in API. Returns 201 on success, 400 on validation errors.
 
 ---
 
@@ -180,9 +181,10 @@ TrainingNutrition/                        ← solution root
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
 │   └── Users/        (User)
-├── TrainingNutrition.Infrastructure/     ✅ Phase 2 Done
-│   ├── AppDbContext.cs                   (all DbSet<T> registered)
-│   ├── Migrations/                       (InitialCreate applied ✅)
+├── TrainingNutrition.Infrastructure/     ✅ Phase 4 Step 1 Done
+│   ├── AppDbContext.cs                   (IdentityDbContext<AppUser>, all DbSet<T>)
+│   ├── AppUser.cs                        (AppUser : IdentityUser)
+│   ├── Migrations/                       (InitialCreate ✅, AddIdentity ✅)
 │   ├── Repositories/
 │   │   ├── EfIngredientRepository.cs
 │   │   └── EfDailyLogRepository.cs
@@ -339,14 +341,13 @@ Key SOLID: **Dependency Inversion, Single Responsibility, Open/Closed**
 Key patterns: **Minimal API endpoints, Middleware, Options pattern**
 Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain logic)**
 
-### 📋 Phase 4 — Auth
-**Step 1 — Identity setup** (infrastructure only)
-- Add `Microsoft.AspNetCore.Identity.EntityFrameworkCore` package to Infrastructure
-- Add `Microsoft.AspNetCore.Authentication.JwtBearer` package to API
-- Create `AppUser : IdentityUser` in Domain or Infrastructure
-- Adapt `AppDbContext` to extend `IdentityDbContext<AppUser>`
-- Generate and apply migration for Identity tables
-- Concept: what tables Identity creates and why
+### 🔄 Phase 4 — Auth
+**Step 1 — Identity setup** ✅ (infrastructure only)
+- `Microsoft.AspNetCore.Identity.EntityFrameworkCore` installed in Infrastructure
+- `Microsoft.AspNetCore.Authentication.JwtBearer` installed in API
+- `AppUser : IdentityUser` created in Infrastructure
+- `AppDbContext` extends `IdentityDbContext<AppUser>` with `base.OnModelCreating()` called
+- `AddIdentity` migration generated and applied — 7 Identity tables in DB
 
 **Step 2 — Register endpoint**
 - `RegisterCommand` + `RegisterHandler` in Application (uses `UserManager<AppUser>`)

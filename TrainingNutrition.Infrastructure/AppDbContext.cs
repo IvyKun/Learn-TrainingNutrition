@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TrainingNutrition.Domain.Dishes;
 using TrainingNutrition.Domain.Ingredients;
@@ -7,7 +8,7 @@ using TrainingNutrition.Domain.Users;
 
 namespace TrainingNutrition.Infrastructure;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<AppUser>
 {
     public DbSet<Ingredient> Ingredients { get; set; }
     public DbSet<User> Users { get; set; }
@@ -22,6 +23,7 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
