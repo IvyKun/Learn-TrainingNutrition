@@ -8,6 +8,7 @@ using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Behaviors;
 using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Infrastructure;
+using TrainingNutrition.Infrastructure.Identity;
 using TrainingNutrition.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,9 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddIdentityCore<AppUser>().AddEntityFrameworkStores<AppDbContext>();
+builder.Services.AddScoped<IIdentityService, IdentityService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -37,11 +41,11 @@ if (app.Environment.IsDevelopment())
 
 //app.UseHttpsRedirection();
 
+app.UseExceptionHandler();
 
 app.MapIngredientsEndpoints();
 app.MapDailyLogsEndpoints();
-
-app.UseExceptionHandler();
+app.MapAuthEndpoints();
 
 app.Run();
 

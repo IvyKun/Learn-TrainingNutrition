@@ -141,9 +141,9 @@ The student can explain the following with their own words:
 
 ### Next Step
 
-**Phase 4 — Auth — Step 2: Register endpoint**
+**Phase 4 — Auth — Step 3: Login endpoint + JWT generation**
 
-Phase 4 Step 1 complete ✅. Next: `RegisterCommand` + `RegisterHandler` in Application (uses `UserManager<AppUser>`), `POST /auth/register` endpoint in API. Returns 201 on success, 400 on validation errors.
+Phase 4 Step 2 complete ✅. Next: `LoginCommand` + `LoginHandler` in Application, `POST /auth/login` endpoint in API. Verifies credentials via `UserManager`, generates a signed JWT on success. JWT secret configured in `appsettings.json`.
 
 ---
 
@@ -349,11 +349,13 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `AppDbContext` extends `IdentityDbContext<AppUser>` with `base.OnModelCreating()` called
 - `AddIdentity` migration generated and applied — 7 Identity tables in DB
 
-**Step 2 — Register endpoint**
-- `RegisterCommand` + `RegisterHandler` in Application (uses `UserManager<AppUser>`)
-- `POST /auth/register` endpoint in API
-- Returns 201 on success, 400 on validation errors
-- Concept: how Identity hashes and stores passwords
+**Step 2 — Register endpoint** ✅
+- `IIdentityService` abstraction in Application (`Abstractions/IIdentityService.cs`)
+- `RegisterCommand` + `RegisterHandler` + `RegisterCommandValidator` in Application (`Auth/`)
+- `IdentityService` in Infrastructure (`Identity/IdentityService.cs`) — uses `UserManager<AppUser>`
+- `POST /auth/register` endpoint in API — 201 on success, 400 on Identity errors, 400 on validation errors
+- `AddIdentityCore<AppUser>().AddEntityFrameworkStores<AppDbContext>()` registered in `Program.cs`
+- Unit tests: `RegisterHandlerTests` (2 tests)
 
 **Step 3 — Login endpoint + JWT generation**
 - `LoginCommand` + `LoginHandler` in Application
