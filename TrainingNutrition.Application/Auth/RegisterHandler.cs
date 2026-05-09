@@ -1,6 +1,5 @@
 using MediatR;
 using TrainingNutrition.Application.Abstractions;
-using TrainingNutrition.Domain.Common;
 
 namespace TrainingNutrition.Application.Auth;
 

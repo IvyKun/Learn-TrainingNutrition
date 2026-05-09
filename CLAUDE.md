@@ -61,9 +61,10 @@ When I share my implementation:
 - Enums: `MealType`
 - All validation lives in constructors (no data annotations)
 
-**`TrainingNutrition.Application`** — Application Layer ✅ Phase 2 Complete
+**`TrainingNutrition.Application`** — Application Layer ✅ Phase 4 Step 3 Complete
 - `Abstractions/IDailyLogRepository.cs` — repository interface (`GetByDateAsync`, `AddAsync`)
 - `Abstractions/IIngredientRepository.cs` — repository interface (`AddAsync`, `GetByIdAsync`)
+- `Abstractions/IIdentityService.cs` — auth abstraction (`RegisterAsync` → `Guid`, `LoginAsync` → `string` token)
 - `Ingredients/CreateIngredientCommand.cs` + `CreateIngredientHandler.cs` — creates ingredient, returns `Guid`
 - `Ingredients/GetIngredientByIdQuery.cs` + `GetIngredientByIdHandler.cs` — returns `IngredientResponse?`
 - `Ingredients/IngredientResponse.cs` — flat DTO (no domain types), includes `CaloriesPer100g`
@@ -71,26 +72,33 @@ When I share my implementation:
 - `DailyLogs/GetOrCreateDailyLogCommand.cs` + `GetOrCreateDailyLogHandler.cs` — gets or creates daily log, returns `DailyLogResponse`
 - `DailyLogs/DailyLogResponse.cs` — flat DTO with `Date` and `TotalCalories`
 - `Behaviors/ValidationBehavior.cs` — generic MediatR pipeline behavior, validates all commands before handler
+- `Auth/RegisterCommand.cs` + `RegisterHandler.cs` + `RegisterCommandValidator.cs` — register user, returns `Guid`
+- `Auth/LoginCommand.cs` + `LoginHandler.cs` + `LoginCommandValidator.cs` — login, returns JWT string
 
-**`TrainingNutrition.Infrastructure`** — Infrastructure Layer ✅ Phase 4 Step 1 Complete
+**`TrainingNutrition.Infrastructure`** — Infrastructure Layer ✅ Phase 4 Step 3 Complete
 - `AppDbContext.cs` — extends `IdentityDbContext<AppUser>`; all `DbSet<T>` registered; `base.OnModelCreating()` called before own configurations
 - `AppUser.cs` — `sealed class AppUser : IdentityUser`; empty for now, ready for custom properties
+- `Identity/JwtSettings.cs` — Options pattern POCO (`Secret`, `Issuer`, `Audience`, `ExpiresInMinutes`)
+- `Identity/IdentityService.cs` — implements `IIdentityService`; `RegisterAsync` uses `UserManager.CreateAsync`; `LoginAsync` verifies credentials with `UserManager`, builds and signs JWT with `JwtSecurityTokenHandler`
 - `Configurations/` — Fluent API configs for all 6 entities
 - `Repositories/EfIngredientRepository.cs` — EF Core impl of `IIngredientRepository`
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
-**`TrainingNutrition.Api`** — API Layer ✅ Phase 3 Complete
-- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `public partial class Program {}` at bottom for test visibility
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 3 Complete
+- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
+- `DTOs/RegisterRequest.cs` — request DTO for POST /auth/register
+- `DTOs/LoginRequest.cs` — request DTO for POST /auth/login
 - `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
 - `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400), with OpenAPI metadata
+- `Endpoints/AuthEndpoints.cs` — `POST /auth/register` (201/400) + `POST /auth/login` (200/401/400), with OpenAPI metadata
 - Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development
 
-**`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 78 passing
+**`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 87 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
-- Application: `CreateIngredientHandlerTests`, `GetIngredientByIdHandlerTests`, `GetOrCreateDailyLogHandlerTests`, `ValidationBehaviorTests` (all with Moq)
-- Integration: `CustomWebApplicationFactory` (overrides DB to `trainingnutrition_test`, applies migrations on startup), `IngredientsIntegrationTests`, `DailyLogsIntegrationTests` (all use `IClassFixture` + `IAsyncLifetime` for per-test cleanup)
+- Application: `CreateIngredientHandlerTests`, `GetIngredientByIdHandlerTests`, `GetOrCreateDailyLogHandlerTests`, `ValidationBehaviorTests`, `RegisterHandlerTests`, `LoginHandlerTests` (all with Moq)
+- Integration: `CustomWebApplicationFactory` (overrides DB to `trainingnutrition_test`, applies migrations on startup), `IngredientsIntegrationTests`, `DailyLogsIntegrationTests`, `AuthIntegrationTests` (all use `IClassFixture` + `IAsyncLifetime` for per-test cleanup)
 
 ### What's Been Understood (Concepts Confirmed)
 
@@ -138,12 +146,18 @@ The student can explain the following with their own words:
 - **Test isolation** — each test must be independent of state left by other tests; shared DB without cleanup causes collisions on unique constraints; cleanup goes in `InitializeAsync` (before), not `DisposeAsync` (after), so a failing test doesn't block the next one
 - **HttpClient in integration tests** — `PostAsJsonAsync` serializes an object to JSON and sends a POST; `GetAsync` sends a GET with the URL only; `ReadFromJsonAsync<T>` deserializes the response body; all from `System.Net.Http.Json`
 - **IClassFixture<T>** — xUnit mechanism to share one factory instance across all tests in a class; the factory (and its DB) is created once, not once per test; `IAsyncLifetime` handles per-test cleanup within that shared instance
+- **Options pattern** — typed configuration in .NET; create a POCO class that maps a JSON section, register with `services.Configure<T>(config.GetSection("Key"))`, inject as `IOptions<T>` and access via `.Value`; avoids magic strings from `IConfiguration["Key:SubKey"]`
+- **JWT structure** — three base64 parts separated by dots: header (algorithm), payload (claims), signature; signed with a secret key the server keeps private; client sends it in each request, server validates the signature without touching the DB
+- **JWT claims** — key/value pairs inside the token payload; standard ones: `sub` (subject = userId), `email`, `exp` (expiry); read from `ClaimsPrincipal` in the endpoint after the middleware validates the token
+- **Building a JWT in .NET** — `SymmetricSecurityKey` wraps the secret bytes; `SigningCredentials` pairs key + algorithm (`HmacSha256`); `JwtSecurityToken` carries issuer, audience, claims and expiry; `JwtSecurityTokenHandler.WriteToken()` serializes to string
+- **Why same error for wrong email and wrong password** — revealing which part failed (email not found vs password wrong) lets attackers enumerate valid accounts; always return the same generic message for any credential failure
+- **IIdentityService abstraction** — Application defines the contract for auth operations; Infrastructure implements it using `UserManager`; Application never references ASP.NET Core Identity directly — D of SOLID
 
 ### Next Step
 
-**Phase 4 — Auth — Step 3: Login endpoint + JWT generation**
+**Phase 4 — Auth — Step 4: Protect existing endpoints**
 
-Phase 4 Step 2 complete ✅. Next: `LoginCommand` + `LoginHandler` in Application, `POST /auth/login` endpoint in API. Verifies credentials via `UserManager`, generates a signed JWT on success. JWT secret configured in `appsettings.json`.
+Phase 4 Step 3 complete ✅. Next: configure JWT middleware in `Program.cs` (`AddAuthentication` + `AddJwtBearer`), add `RequireAuthorization()` to ingredients and dailylogs endpoints. No valid token → 401 Unauthorized.
 
 ---
 
@@ -181,9 +195,12 @@ TrainingNutrition/                        ← solution root
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
 │   └── Users/        (User)
-├── TrainingNutrition.Infrastructure/     ✅ Phase 4 Step 1 Done
+├── TrainingNutrition.Infrastructure/     ✅ Phase 4 Step 3 Done
 │   ├── AppDbContext.cs                   (IdentityDbContext<AppUser>, all DbSet<T>)
 │   ├── AppUser.cs                        (AppUser : IdentityUser)
+│   ├── Identity/
+│   │   ├── IdentityService.cs            (RegisterAsync + LoginAsync — JWT generation)
+│   │   └── JwtSettings.cs               (Options pattern POCO)
 │   ├── Migrations/                       (InitialCreate ✅, AddIdentity ✅)
 │   ├── Repositories/
 │   │   ├── EfIngredientRepository.cs
@@ -195,20 +212,23 @@ TrainingNutrition/                        ← solution root
 │       ├── DishConfiguration.cs
 │       ├── MealConfiguration.cs
 │       └── DailyLogConfiguration.cs
-├── TrainingNutrition.Application/        ✅ Phase 2 Done
-│   ├── Abstractions/ (IIngredientRepository, IDailyLogRepository)
+├── TrainingNutrition.Application/        ✅ Phase 4 Step 3 Done
+│   ├── Abstractions/ (IIngredientRepository, IDailyLogRepository, IIdentityService)
 │   ├── Behaviors/    (ValidationBehavior)
 │   ├── Ingredients/  (Command, Query, Handler, Validator, IngredientResponse)
-│   └── DailyLogs/    (Command, Handler, DailyLogResponse)
-├── TrainingNutrition.Api/                ✅ Phase 3 Done
-│   ├── DTOs/         (CreateIngredientRequest)
-│   ├── Endpoints/    (IngredientsEndpoints, DailyLogsEndpoints)
-│   └── Program.cs    (DI registrations + app.MapXxxEndpoints())
-└── TrainingNutrition.Tests/              ✅ 78 passing
+│   ├── DailyLogs/    (Command, Handler, DailyLogResponse)
+│   └── Auth/         (RegisterCommand, RegisterHandler, RegisterCommandValidator,
+│                       LoginCommand, LoginHandler, LoginCommandValidator)
+├── TrainingNutrition.Api/                ✅ Phase 4 Step 3 Done
+│   ├── DTOs/         (CreateIngredientRequest, RegisterRequest, LoginRequest)
+│   ├── Endpoints/    (IngredientsEndpoints, DailyLogsEndpoints, AuthEndpoints)
+│   └── Program.cs    (DI registrations + Configure<JwtSettings> + app.MapXxxEndpoints())
+└── TrainingNutrition.Tests/              ✅ 87 passing
     ├── Integration/  (CustomWebApplicationFactory, IngredientsIntegrationTests,
-    │                  DailyLogsIntegrationTests)
+    │                  DailyLogsIntegrationTests, AuthIntegrationTests)
     ├── Application/  (CreateIngredientHandlerTests, GetIngredientByIdHandlerTests,
-    │                  GetOrCreateDailyLogHandlerTests, ValidationBehaviorTests)
+    │                  GetOrCreateDailyLogHandlerTests, ValidationBehaviorTests,
+    │                  RegisterHandlerTests, LoginHandlerTests)
     ├── Common/       (EmailTests, GramsTests, MacronutrientsTests)
     ├── Dishes/       (DishTests)
     ├── Ingredients/  (IngredientTests, IngredientEntryTests)
@@ -356,13 +376,16 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `POST /auth/register` endpoint in API — 201 on success, 400 on Identity errors, 400 on validation errors
 - `AddIdentityCore<AppUser>().AddEntityFrameworkStores<AppDbContext>()` registered in `Program.cs`
 - Unit tests: `RegisterHandlerTests` (2 tests)
+- Integration tests: `AuthIntegrationTests` — register valid, register duplicate (covered via login suite)
 
-**Step 3 — Login endpoint + JWT generation**
-- `LoginCommand` + `LoginHandler` in Application
-- `POST /auth/login` endpoint in API
-- Verifies credentials via `UserManager`, generates a signed JWT on success
-- JWT secret configured in `appsettings.json` via Options pattern
-- Concept: how to build and sign a JWT in .NET
+**Step 3 — Login endpoint + JWT generation** ✅
+- `LoginCommand` + `LoginHandler` + `LoginCommandValidator` in Application (`Auth/`)
+- `JwtSettings.cs` POCO in Infrastructure — Options pattern for typed config (`Secret`, `Issuer`, `Audience`, `ExpiresInMinutes`)
+- `Configure<JwtSettings>` registered in `Program.cs`; `Jwt` section added to `appsettings.json`
+- `IdentityService.LoginAsync` — `FindByEmailAsync` + `CheckPasswordAsync` + JWT built with `JwtSecurityTokenHandler`
+- `POST /auth/login` endpoint in API — 200 with token, 401 if credentials invalid, 400 if validation fails
+- `System.IdentityModel.Tokens.Jwt` NuGet installed in Infrastructure
+- Unit tests: `LoginHandlerTests` (2 tests); Integration tests: `AuthIntegrationTests` (5 tests)
 
 **Step 4 — Protect existing endpoints**
 - Configure JWT middleware in `Program.cs` (`AddAuthentication` + `AddJwtBearer`)

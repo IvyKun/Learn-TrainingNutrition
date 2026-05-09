@@ -7,7 +7,7 @@ namespace TrainingNutrition.Api.Endpoints;
 
 public static class AuthEndpoints
 {
-      public static void MapAuthEndpoints(this WebApplication app)
+    public static void MapAuthEndpoints(this WebApplication app)
     {
         // POST /auth/register
         app.MapPost("/auth/register", async (
@@ -33,6 +33,34 @@ public static class AuthEndpoints
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesValidationProblem()
         .ProducesProblem(StatusCodes.Status400BadRequest);
+
+
+        // POST /auth/login
+        app.MapPost("/auth/login", async (
+            LoginRequest request, 
+            IMediator mediator, 
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var command = new LoginCommand(request.Email, request.Password);
+                var token = await mediator.Send(command, cancellationToken);
+                return Results.Ok(token);
+            }
+            catch (InvalidOperationException)
+            {
+                return Results.Unauthorized();
+            }
+
+        })
+        .WithName("LoginUser")
+        .WithTags("Auth")
+        .WithSummary("User Login")
+        .Produces<string>(StatusCodes.Status200OK)
+        .ProducesValidationProblem()
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
         
     }
+
+    
 }

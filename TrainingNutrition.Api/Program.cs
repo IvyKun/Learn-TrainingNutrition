@@ -30,6 +30,7 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddIdentityCore<AppUser>().AddEntityFrameworkStores<AppDbContext>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 var app = builder.Build();
 

@@ -2,7 +2,7 @@ using MediatR;
 
 namespace TrainingNutrition.Application.Auth;
 
-public sealed record RegisterCommand(
+public sealed record LoginCommand(
     string Email, 
     string Password
-) : IRequest<Guid>;
+) : IRequest<string>;

@@ -34,7 +34,7 @@ public sealed class RegisterHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ThrowsInvalidOperationException_WhenIdentityFails_()
+    public async Task Handle_ThrowsInvalidOperationException_WhenIdentityFails()
     {
 
         // Arrange
