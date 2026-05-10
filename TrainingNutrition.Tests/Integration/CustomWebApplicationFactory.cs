@@ -1,6 +1,11 @@
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,6 +31,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseNpgsql("Host=localhost;Port=5432;Database=trainingnutrition_test;Username=tnuser;Password=tnpassword"));
         });
 
+        builder.ConfigureTestServices(services =>
+        {
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.TokenValidationParameters.ValidateIssuerSigningKey = false;
+                options.TokenValidationParameters.ValidateIssuer = false;
+                options.TokenValidationParameters.ValidateAudience = false;
+                options.TokenValidationParameters.ValidateLifetime = false;
+                options.TokenValidationParameters.RequireSignedTokens = false;
+            });
+        });
+
+
         builder.UseEnvironment("Development");
     }
 
@@ -39,5 +57,28 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         return host;
     }
-    
+
+    public HttpClient CreateAuthenticatedClient(string userId = "00000000-0000-0000-0000-000000000001")
+    {
+        HttpClient client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateFakeToken(userId));
+        return client;
+    }
+
+    public HttpClient CreateUnauthenticatedClient() => CreateClient();
+
+    private static string CreateFakeToken(string userId)
+    {
+        JwtSecurityToken token = new(
+            claims:
+            [
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim(ClaimTypes.Email, "test@test.com")
+            ],
+            expires: DateTime.UtcNow.AddHours(1)
+        );
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+
 }

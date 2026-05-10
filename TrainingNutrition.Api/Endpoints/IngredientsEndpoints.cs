@@ -25,7 +25,8 @@ public static class IngredientsEndpoints
         .WithTags("Ingredients")
         .WithSummary("Create a new ingredient")
         .Produces<Guid>(StatusCodes.Status201Created)
-        .ProducesValidationProblem();
+        .ProducesValidationProblem()
+        .RequireAuthorization();
 
         // GET /ingredients/{id}
         app.MapGet("/ingredients/{id}", async (
@@ -48,6 +49,7 @@ public static class IngredientsEndpoints
         .WithTags("Ingredients")
         .WithSummary("Get an ingredient")
         .Produces<IngredientResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status404NotFound);
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .RequireAuthorization();
     }
 }

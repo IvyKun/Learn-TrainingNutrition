@@ -153,11 +153,20 @@ The student can explain the following with their own words:
 - **Why same error for wrong email and wrong password** — revealing which part failed (email not found vs password wrong) lets attackers enumerate valid accounts; always return the same generic message for any credential failure
 - **IIdentityService abstraction** — Application defines the contract for auth operations; Infrastructure implements it using `UserManager`; Application never references ASP.NET Core Identity directly — D of SOLID
 
+### Known Limitations
+
+**⚠️ Scalar Bearer auth UI does NOT work — cannot test authenticated endpoints manually via Scalar.**
+- `Microsoft.AspNetCore.OpenApi` 10.0.x + `Microsoft.OpenApi` v2 changed the security scheme API
+- Adding `OpenApiSecurityScheme` via `AddDocumentTransformer` does not compile correctly with .NET 10 — the `SecuritySchemes` property type changed in v2 and is incompatible with `Dictionary<string, OpenApiSecurityScheme>`
+- `AddPreferredSecuritySchemes("Bearer")` in Scalar is configured but has no effect without the scheme in the OpenAPI document
+- **All auth behaviour is verified exclusively via integration tests (90 passing)** — not via Scalar UI
+- This is a known issue in .NET 10 — to be revisited when the ecosystem stabilises
+
 ### Next Step
 
-**Phase 4 — Auth — Step 4: Protect existing endpoints**
+**Phase 4 — Auth — Step 5: Use the authenticated user**
 
-Phase 4 Step 3 complete ✅. Next: configure JWT middleware in `Program.cs` (`AddAuthentication` + `AddJwtBearer`), add `RequireAuthorization()` to ingredients and dailylogs endpoints. No valid token → 401 Unauthorized.
+Phase 4 Step 4 complete ✅. Next: extract `userId` from the JWT token inside the endpoint (`HttpContext.User`), pass it to `GetOrCreateDailyLogCommand` — remove the hardcoded `tempUserId` placeholder.
 
 ---
 

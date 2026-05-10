@@ -23,6 +23,7 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>, 
     {
         using IServiceScope scope = _factory.Services.CreateScope();
         AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Set<AppUser>().RemoveRange(db.Set<AppUser>());
         db.Users.RemoveRange(db.Users);
         await db.SaveChangesAsync();
     }

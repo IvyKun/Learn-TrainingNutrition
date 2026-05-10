@@ -1,6 +1,9 @@
+using System.Text;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using TrainingNutrition.Api;
 using TrainingNutrition.Api.Endpoints;
@@ -31,18 +34,42 @@ builder.Services.AddProblemDetails();
 builder.Services.AddIdentityCore<AppUser>().AddEntityFrameworkStores<AppDbContext>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        JwtSettings jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+        };
+    });
+builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    options
+        .AddPreferredSecuritySchemes("Bearer")
+        .AddHttpAuthentication("Bearer", auth => { })
+);
 }
 
 //app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapIngredientsEndpoints();
 app.MapDailyLogsEndpoints();

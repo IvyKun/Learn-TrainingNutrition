@@ -16,7 +16,7 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
     public IngredientIntregrationTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _httpClient = factory.CreateClient();
+       _httpClient = factory.CreateAuthenticatedClient();
     }
 
     
@@ -89,6 +89,35 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // Auth
+
+    [Fact]
+    public async Task CreateIngredient_WithoutToken_Returns401()
+    {
+        // Arrange
+        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
+        CreateIngredientRequest request = new("Chicken", 31, 0, 3.6m, 0, 0.1m);
+
+        // Act
+        HttpResponseMessage response = await unauthenticatedClient.PostAsJsonAsync("/ingredients", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetIngredient_WithoutToken_Returns401()
+    {
+        // Arrange
+        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
+
+        // Act
+        HttpResponseMessage response = await unauthenticatedClient.GetAsync($"/ingredients/{Guid.NewGuid()}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
 }

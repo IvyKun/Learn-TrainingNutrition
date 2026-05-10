@@ -15,7 +15,7 @@ public class DailyLogsIntegrationTests : IClassFixture<CustomWebApplicationFacto
     public DailyLogsIntegrationTests(CustomWebApplicationFactory factory)
     {
         _factory = factory;
-        _httpClient = factory.CreateClient();
+       _httpClient = factory.CreateAuthenticatedClient();
     }
 
     
@@ -81,6 +81,21 @@ public class DailyLogsIntegrationTests : IClassFixture<CustomWebApplicationFacto
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    // Auth
+
+    [Fact]
+    public async Task GetDailyLog_WithoutToken_Returns401()
+    {
+        // Arrange
+        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
+
+        // Act
+        HttpResponseMessage response = await unauthenticatedClient.GetAsync("/dailylogs/2026-01-01");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+}
 
 
 }

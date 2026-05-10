@@ -30,7 +30,8 @@ public static class DailyLogsEndpoints
         .WithTags("DailyLog")
         .WithSummary("Get a DailyLog")
         .Produces<DailyLogResponse>(StatusCodes.Status200OK)
-        .ProducesProblem(StatusCodes.Status400BadRequest);
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .RequireAuthorization();
         
     }
 }
