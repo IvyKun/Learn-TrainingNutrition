@@ -85,17 +85,17 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
-**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 3 Complete
-- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `public partial class Program {}` at bottom for test visibility
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 4 Complete
+- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `AddAuthentication + AddJwtBearer` configured; `BearerSecuritySchemeTransformer` registered via `AddDocumentTransformer`; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
 - `DTOs/RegisterRequest.cs` — request DTO for POST /auth/register
 - `DTOs/LoginRequest.cs` — request DTO for POST /auth/login
 - `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
 - `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400), with OpenAPI metadata
 - `Endpoints/AuthEndpoints.cs` — `POST /auth/register` (201/400) + `POST /auth/login` (200/401/400), with OpenAPI metadata
-- Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development
+- Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development; Bearer auth UI functional via `BearerSecuritySchemeTransformer`
 
-**`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 87 passing
+**`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 90 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
 - Application: `CreateIngredientHandlerTests`, `GetIngredientByIdHandlerTests`, `GetOrCreateDailyLogHandlerTests`, `ValidationBehaviorTests`, `RegisterHandlerTests`, `LoginHandlerTests` (all with Moq)
 - Integration: `CustomWebApplicationFactory` (overrides DB to `trainingnutrition_test`, applies migrations on startup), `IngredientsIntegrationTests`, `DailyLogsIntegrationTests`, `AuthIntegrationTests` (all use `IClassFixture` + `IAsyncLifetime` for per-test cleanup)
@@ -137,7 +137,7 @@ The student can explain the following with their own words:
 - **Handler DTOs live in Application, not API** — the handler maps domain → DTO and returns it; the endpoint passes it through without touching domain types; API layer never imports domain
 - **Endpoint extension methods** — static class with extension method on `WebApplication`; one file per resource in `Endpoints/`; `Program.cs` only calls `app.MapXxxEndpoints()` — S of SOLID applied to the API layer
 - **OpenAPI metadata decorators** — `.WithTags()`, `.WithSummary()`, `.WithName()`, `.Produces<T>()`, `.ProducesProblem()`, `.ProducesValidationProblem()` describe the endpoint contract without changing behavior; only annotate responses that actually happen in code
-- **Scalar** — modern interactive UI for .NET 9/10 that consumes the OpenAPI JSON spec; registered via `app.MapScalarApiReference()` in Development; accessible at `/scalar/v1`
+- **Scalar** — modern interactive UI for .NET 9/10 that consumes the OpenAPI JSON spec; registered via `app.MapScalarApiReference()` in Development; accessible at `/scalar/v1`; Bearer auth requires injecting an `IOpenApiDocumentTransformer` that adds the scheme to `document.Components.SecuritySchemes` as `Dictionary<string, IOpenApiSecurityScheme>` — the interface type changed in `Microsoft.OpenApi` v2
 - **WebApplicationFactory** — ASP.NET Core test utility that boots the full application in memory; `WebApplicationFactory<Program>` is the entry point; `ConfigureWebHost` overrides DI registrations (e.g. swap DB connection string) before the app starts; `CreateClient()` returns an `HttpClient` wired directly to the in-memory server
 - **public partial class Program {}** — makes the implicit `Program` class visible to other assemblies (e.g. the test project); required for `WebApplicationFactory<Program>` to compile
 - **Test DB override pattern** — remove the existing `DbContextOptions<AppDbContext>` descriptor from DI, then re-register with the test connection string; the rest of the app (handlers, validators, endpoints) stays unchanged; Dependency Inversion makes this swap transparent
@@ -152,15 +152,6 @@ The student can explain the following with their own words:
 - **Building a JWT in .NET** — `SymmetricSecurityKey` wraps the secret bytes; `SigningCredentials` pairs key + algorithm (`HmacSha256`); `JwtSecurityToken` carries issuer, audience, claims and expiry; `JwtSecurityTokenHandler.WriteToken()` serializes to string
 - **Why same error for wrong email and wrong password** — revealing which part failed (email not found vs password wrong) lets attackers enumerate valid accounts; always return the same generic message for any credential failure
 - **IIdentityService abstraction** — Application defines the contract for auth operations; Infrastructure implements it using `UserManager`; Application never references ASP.NET Core Identity directly — D of SOLID
-
-### Known Limitations
-
-**⚠️ Scalar Bearer auth UI does NOT work — cannot test authenticated endpoints manually via Scalar.**
-- `Microsoft.AspNetCore.OpenApi` 10.0.x + `Microsoft.OpenApi` v2 changed the security scheme API
-- Adding `OpenApiSecurityScheme` via `AddDocumentTransformer` does not compile correctly with .NET 10 — the `SecuritySchemes` property type changed in v2 and is incompatible with `Dictionary<string, OpenApiSecurityScheme>`
-- `AddPreferredSecuritySchemes("Bearer")` in Scalar is configured but has no effect without the scheme in the OpenAPI document
-- **All auth behaviour is verified exclusively via integration tests (90 passing)** — not via Scalar UI
-- This is a known issue in .NET 10 — to be revisited when the ecosystem stabilises
 
 ### Next Step
 
@@ -231,7 +222,8 @@ TrainingNutrition/                        ← solution root
 ├── TrainingNutrition.Api/                ✅ Phase 4 Step 3 Done
 │   ├── DTOs/         (CreateIngredientRequest, RegisterRequest, LoginRequest)
 │   ├── Endpoints/    (IngredientsEndpoints, DailyLogsEndpoints, AuthEndpoints)
-│   └── Program.cs    (DI registrations + Configure<JwtSettings> + app.MapXxxEndpoints())
+│   ├── Program.cs    (DI registrations + Configure<JwtSettings> + AddAuthentication/JwtBearer + BearerSecuritySchemeTransformer + app.MapXxxEndpoints())
+│   └── BearerSecuritySchemeTransformer (IOpenApiDocumentTransformer — adds Bearer scheme to OpenAPI doc)
 └── TrainingNutrition.Tests/              ✅ 87 passing
     ├── Integration/  (CustomWebApplicationFactory, IngredientsIntegrationTests,
     │                  DailyLogsIntegrationTests, AuthIntegrationTests)

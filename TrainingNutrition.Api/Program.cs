@@ -1,9 +1,12 @@
 using System.Text;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using TrainingNutrition.Api;
 using TrainingNutrition.Api.Endpoints;
@@ -17,7 +20,11 @@ using TrainingNutrition.Infrastructure.Repositories;
 var builder = WebApplication.CreateBuilder(args);
 
 // OpenAPI (keep it)
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+});
 
 // DI registrations
 builder.Services.AddScoped<IDailyLogRepository, EfDailyLogRepository>();
@@ -59,10 +66,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
-    options
+        options
         .AddPreferredSecuritySchemes("Bearer")
         .AddHttpAuthentication("Bearer", auth => { })
-);
+    );
 }
 
 //app.UseHttpsRedirection();
@@ -80,3 +87,27 @@ app.Run();
 
 
 public partial class Program { }
+
+
+internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiDocumentTransformer
+{
+    public async Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    {
+        var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
+        if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
+        {
+            var securitySchemes = new Dictionary<string, IOpenApiSecurityScheme>
+            {
+                ["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer", // "bearer" refers to the header name here
+                    In = ParameterLocation.Header,
+                    BearerFormat = "Json Web Token"
+                }
+            };
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes = securitySchemes;
+        }
+    }
+}
