@@ -1,5 +1,6 @@
 
 
+using System.Security.Claims;
 using MediatR;
 using TrainingNutrition.Application.DailyLogs;
 
@@ -12,16 +13,22 @@ public static class DailyLogsEndpoints
         // GET /dailylogs/2026-02-21
         app.MapGet("/dailylogs/{date}", async (
             string date,
-            IMediator mediator, 
+            IMediator mediator,
+            HttpContext httpContext,
             CancellationToken cancellationToken) =>
         {
             if (!DateOnly.TryParse(date, out var parsedDate))
                 return Results.BadRequest("Invalid date format. Use yyyy-MM-dd.");
 
-        // TODO: replace with authenticated user ID from JWT token (Phase 4 - Auth)
-            var tempUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Results.InternalServerError();
+            }
 
-            var command = new GetOrCreateDailyLogCommand(tempUserId, parsedDate);
+            var guidUserId = Guid.Parse(userId);
+
+            var command = new GetOrCreateDailyLogCommand(guidUserId, parsedDate);
             var dailyLogResponse = await mediator.Send(command, cancellationToken);
 
             return Results.Ok(dailyLogResponse);
@@ -31,6 +38,7 @@ public static class DailyLogsEndpoints
         .WithSummary("Get a DailyLog")
         .Produces<DailyLogResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status500InternalServerError)
         .RequireAuthorization();
         
     }

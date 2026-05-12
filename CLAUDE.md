@@ -85,13 +85,13 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
-**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 4 Complete
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 5 Complete
 - `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `AddAuthentication + AddJwtBearer` configured; `BearerSecuritySchemeTransformer` registered via `AddDocumentTransformer`; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
 - `DTOs/RegisterRequest.cs` — request DTO for POST /auth/register
 - `DTOs/LoginRequest.cs` — request DTO for POST /auth/login
 - `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
-- `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400), with OpenAPI metadata
+- `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400/500); reads `ClaimTypes.NameIdentifier` from `HttpContext.User` to extract authenticated UserId from JWT; with OpenAPI metadata
 - `Endpoints/AuthEndpoints.cs` — `POST /auth/register` (201/400) + `POST /auth/login` (200/401/400), with OpenAPI metadata
 - Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development; Bearer auth UI functional via `BearerSecuritySchemeTransformer`
 
@@ -152,12 +152,15 @@ The student can explain the following with their own words:
 - **Building a JWT in .NET** — `SymmetricSecurityKey` wraps the secret bytes; `SigningCredentials` pairs key + algorithm (`HmacSha256`); `JwtSecurityToken` carries issuer, audience, claims and expiry; `JwtSecurityTokenHandler.WriteToken()` serializes to string
 - **Why same error for wrong email and wrong password** — revealing which part failed (email not found vs password wrong) lets attackers enumerate valid accounts; always return the same generic message for any credential failure
 - **IIdentityService abstraction** — Application defines the contract for auth operations; Infrastructure implements it using `UserManager`; Application never references ASP.NET Core Identity directly — D of SOLID
+- **JWT claims in Minimal APIs** — after the JWT middleware validates the token, claims are available in `HttpContext.User` as a `ClaimsPrincipal`; `FindFirst(ClaimTypes.NameIdentifier)` reads the `sub` claim (userId); `ClaimTypes.NameIdentifier` is .NET's internal name for the `sub` standard JWT claim
+- **HttpContext injection in Minimal APIs** — `HttpContext` is injected as a lambda parameter automatically by ASP.NET Core, exactly like `IMediator` or `CancellationToken`; no extra registration needed
+- **Defensive 500 vs 400 for missing claims** — if a claim is missing after `RequireAuthorization()` passes, the fault is the server's (malformed token), not the client's; return 500 not 400
 
 ### Next Step
 
-**Phase 4 — Auth — Step 5: Use the authenticated user**
+**Phase 5 — Cross-cutting Concerns**
 
-Phase 4 Step 4 complete ✅. Next: extract `userId` from the JWT token inside the endpoint (`HttpContext.User`), pass it to `GetOrCreateDailyLogCommand` — remove the hardcoded `tempUserId` placeholder.
+Phase 4 complete ✅. Next phase: Logging with Serilog, global exception handling, request/response logging pipeline behavior, Redis caching.
 
 ---
 
@@ -362,7 +365,7 @@ Key SOLID: **Dependency Inversion, Single Responsibility, Open/Closed**
 Key patterns: **Minimal API endpoints, Middleware, Options pattern**
 Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain logic)**
 
-### 🔄 Phase 4 — Auth
+### ✅ Phase 4 — Auth
 **Step 1 — Identity setup** ✅ (infrastructure only)
 - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` installed in Infrastructure
 - `Microsoft.AspNetCore.Authentication.JwtBearer` installed in API
@@ -394,10 +397,9 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - No valid token → 401 Unauthorized
 - Concept: how ASP.NET Core intercepts and validates the token before reaching the handler
 
-**Step 5 — Use the authenticated user**
-- Extract `userId` from the JWT token inside the endpoint (`HttpContext.User`)
-- Pass it to commands (DailyLog must belong to the authenticated user)
-- Concept: reading claims from `ClaimsPrincipal` inside a Minimal API endpoint
+**Step 5 — Use the authenticated user** ✅
+- `DailyLogsEndpoints.cs` — inject `HttpContext httpContext` as endpoint parameter; read `ClaimTypes.NameIdentifier` from `HttpContext.User`; parse to Guid; pass real UserId to `GetOrCreateDailyLogCommand`; removed hardcoded `tempUserId` placeholder; defensive 500 if claim missing
+- Concept: reading claims from `ClaimsPrincipal` inside a Minimal API endpoint; `sub` JWT claim maps to `ClaimTypes.NameIdentifier` in .NET
 
 ### 📋 Phase 5 — Cross-cutting Concerns
 - Logging with Serilog
