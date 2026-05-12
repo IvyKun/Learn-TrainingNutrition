@@ -402,16 +402,59 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - Concept: reading claims from `ClaimsPrincipal` inside a Minimal API endpoint; `sub` JWT claim maps to `ClaimTypes.NameIdentifier` in .NET
 
 ### 📋 Phase 5 — Cross-cutting Concerns
-- Logging with Serilog
-- Global exception handling
-- Request/Response logging pipeline behavior
-- Redis caching
+
+**Step 1 — Global Exception Handling**
+- Create `TrainingNutrition.Api/Exceptions/GlobalExceptionHandler.cs` — implements `IExceptionHandler`; maps `InvalidOperationException` → 400, everything else → 500; writes Problem Details response
+- `Program.cs` — `services.AddProblemDetails()` + `services.AddExceptionHandler<GlobalExceptionHandler>()` + `app.UseExceptionHandler()`
+- Goal: single place for all unhandled exceptions; no stack traces leaking to clients; consistent Problem Details format (RFC 7807)
+- ⚠️ .NET 10 note: diagnostics emitted only for unhandled exceptions (changed from .NET 8/9)
+
+**Step 2 — Structured Logging with Serilog**
+- Install `Serilog.AspNetCore` (one package, includes sinks + configuration)
+- `Program.cs` — `builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration))` — replaces default .NET logging
+- `Program.cs` — `app.UseSerilogRequestLogging()` — automatic structured log per HTTP request (must be before endpoint mapping)
+- `appsettings.json` — add `Serilog` section with minimum level, Console sink
+- ⚠️ .NET 10 note: `builder.Host.UseSerilog()` was REMOVED in Serilog.AspNetCore 8.0+ — use `builder.Services.AddSerilog()` instead
+
+**Step 3 — MediatR Logging Pipeline Behavior**
+- Create `TrainingNutrition.Application/Behaviors/LoggingBehavior.cs` — implements `IPipelineBehavior<TRequest, TResponse>`; logs command/query name + elapsed time before and after handler execution
+- `Program.cs` — register via `cfg.AddOpenBehavior(typeof(LoggingBehavior<,>))` inside `AddMediatR()` — migrate existing `ValidationBehavior` registration to same pattern
+- Goal: every command/query execution is logged with timing — zero changes to handlers (Open/Closed)
+- ⚠️ .NET 10 note: `AddOpenBehavior()` inside `AddMediatR()` config replaces manual `AddTransient(typeof(IPipelineBehavior<,>), ...)` — both ValidationBehavior and LoggingBehavior registered this way
+
+**Step 4 — Redis + HybridCache**
+- `docker-compose.yml` — add `redis:7-alpine` service; expose port 6379
+- Install `Microsoft.Extensions.Caching.Hybrid` + `StackExchange.Redis` in Infrastructure
+- `Program.cs` — `services.AddStackExchangeRedisCache()` + `services.AddHybridCache()`
+- Apply to `GetIngredientByIdHandler` — cache ingredient responses by Id; ingredients rarely change → ideal cache candidate
+- Goal: HybridCache combines L1 (in-memory) + L2 (Redis) automatically with a single `GetOrCreateAsync()` API
 
 ### 📋 Phase 6 — Production Readiness
-- Extend docker-compose (API + PostgreSQL + Redis)
-- Health checks
-- Environment-based configuration
-- GitHub Actions CI/CD pipeline
+
+**Step 1 — Dockerize the API**
+- `Dockerfile` at solution root — multi-stage build: `sdk:10.0` stage to compile, `aspnet:10.0-noble-chiseled` stage to run (~25 MB image); run as non-root (`USER app`)
+- `docker-compose.yml` — add `api` service; `depends_on` with `condition: service_healthy` for PostgreSQL and Redis; services communicate via Docker network using service names (not localhost)
+- Connection strings in `appsettings.json` updated to use Docker service hostnames (`db`, `redis`)
+- ⚠️ .NET 10 note: production image is `aspnet:10.0-noble-chiseled` (chiseled Ubuntu, no shell — smaller attack surface)
+
+**Step 2 — Health Checks**
+- Install `AspNetCore.HealthChecks.NpgSql` + `AspNetCore.HealthChecks.Redis`
+- `Program.cs` — `services.AddHealthChecks().AddNpgSql(...).AddRedis(...)`
+- `Program.cs` — `app.MapHealthChecks("/health")` with JSON response writer
+- Goal: Kubernetes / Docker liveness and readiness probes; operations can monitor service health without reading logs
+
+**Step 3 — Environment-based Configuration + User Secrets**
+- `appsettings.Development.json` — overrides for local dev (verbose logging, etc.)
+- `appsettings.Production.json` — production overrides (no stack traces, structured logging only)
+- User Secrets for local dev (`dotnet user-secrets`) — JWT secret, DB password; never committed to git
+- Environment variables override all config files — standard deployment pattern for containers
+- Priority order: CLI args → env vars → User Secrets → `appsettings.{env}.json` → `appsettings.json`
+
+**Step 4 — GitHub Actions CI/CD**
+- `.github/workflows/ci.yml` — on push to `develop` and PRs to `master`
+- Steps: `actions/setup-dotnet@v5` with `dotnet-version: '10.0.x'` → `dotnet build` → `dotnet test`
+- PostgreSQL service container in the workflow for integration tests
+- Goal: every push is validated automatically; broken builds are caught before merge
 
 ---
 
