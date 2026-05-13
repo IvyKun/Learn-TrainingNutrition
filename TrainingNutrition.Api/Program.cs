@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
-using TrainingNutrition.Api;
+using TrainingNutrition.Api.Exceptions;
 using TrainingNutrition.Api.Endpoints;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Behaviors;

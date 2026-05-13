@@ -85,15 +85,17 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
-**`TrainingNutrition.Api`** — API Layer ✅ Phase 4 Step 5 Complete
-- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `AddAuthentication + AddJwtBearer` configured; `BearerSecuritySchemeTransformer` registered via `AddDocumentTransformer`; `public partial class Program {}` at bottom for test visibility
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 5 Step 1 Complete
+- `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `AddAuthentication + AddJwtBearer` configured; `BearerSecuritySchemeTransformer` registered via `AddDocumentTransformer`; `AddProblemDetails()` + `AddExceptionHandler<GlobalExceptionHandler>()` + `UseExceptionHandler()` registered; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
 - `DTOs/RegisterRequest.cs` — request DTO for POST /auth/register
 - `DTOs/LoginRequest.cs` — request DTO for POST /auth/login
 - `Endpoints/IngredientsEndpoints.cs` — `POST /ingredients` (201) + `GET /ingredients/{id}` (200/404), with OpenAPI metadata
 - `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400/500); reads `ClaimTypes.NameIdentifier` from `HttpContext.User` to extract authenticated UserId from JWT; with OpenAPI metadata
 - `Endpoints/AuthEndpoints.cs` — `POST /auth/register` (201/400) + `POST /auth/login` (200/401/400), with OpenAPI metadata
+- `Exceptions/GlobalExceptionHandler.cs` — implements `IExceptionHandler`; switch expression maps `ValidationException`/`InvalidOperationException` → 400, everything else → 500; writes Problem Details (RFC 7807) via `IProblemDetailsService.TryWriteAsync`; injected via constructor (primary constructor pattern)
 - Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development; Bearer auth UI functional via `BearerSecuritySchemeTransformer`
+- ⚠️ Pending test: integration tests for `InvalidOperationException` → 400 and catch-all → 500 paths will be added when a real handler throws those exceptions
 
 **`TrainingNutrition.Tests`** — Unit + Integration Tests (xUnit) — 90 passing
 - Domain: `EmailTests`, `GramsTests`, `MacronutrientsTests`, `DishTests`, `IngredientTests`, `IngredientEntryTests`, `MealTests`, `DailyLogTests`, `UserTests`
@@ -155,12 +157,16 @@ The student can explain the following with their own words:
 - **JWT claims in Minimal APIs** — after the JWT middleware validates the token, claims are available in `HttpContext.User` as a `ClaimsPrincipal`; `FindFirst(ClaimTypes.NameIdentifier)` reads the `sub` claim (userId); `ClaimTypes.NameIdentifier` is .NET's internal name for the `sub` standard JWT claim
 - **HttpContext injection in Minimal APIs** — `HttpContext` is injected as a lambda parameter automatically by ASP.NET Core, exactly like `IMediator` or `CancellationToken`; no extra registration needed
 - **Defensive 500 vs 400 for missing claims** — if a claim is missing after `RequireAuthorization()` passes, the fault is the server's (malformed token), not the client's; return 500 not 400
+- **IExceptionHandler** — single class that handles all unhandled exceptions app-wide; `TryHandleAsync` returns `true` if the exception was handled (response written), `false` to pass to the next handler; registered via `AddExceptionHandler<T>()` + `UseExceptionHandler()`; S of SOLID: endpoints never contain error handling logic
+- **Problem Details (RFC 7807)** — standard HTTP error response format: `status`, `title`, `type`, `detail` fields; `IProblemDetailsService.TryWriteAsync` builds and writes it automatically from `ProblemDetailsContext`; injected in constructor, not in the method
+- **ProblemDetailsContext** — container passed to `IProblemDetailsService`; groups three things: `HttpContext` (the current request), `Exception` (what was thrown), and `ProblemDetails` (optional override for title/detail); status code is read from `httpContext.Response.StatusCode` — set it before calling `TryWriteAsync`
+- **Switch expression for exception mapping** — `exception switch { ValidationException => 400, InvalidOperationException => 400, _ => 500 }` maps exception types to status codes in a single expression; `_` is the catch-all default case
 
 ### Next Step
 
-**Phase 5 — Cross-cutting Concerns**
+**Phase 5 — Cross-cutting Concerns, Step 2 — Serilog**
 
-Phase 4 complete ✅. Next phase: Logging with Serilog, global exception handling, request/response logging pipeline behavior, Redis caching.
+Phase 5 Step 1 complete ✅. Next: structured logging with Serilog.
 
 ---
 
@@ -222,10 +228,11 @@ TrainingNutrition/                        ← solution root
 │   ├── DailyLogs/    (Command, Handler, DailyLogResponse)
 │   └── Auth/         (RegisterCommand, RegisterHandler, RegisterCommandValidator,
 │                       LoginCommand, LoginHandler, LoginCommandValidator)
-├── TrainingNutrition.Api/                ✅ Phase 4 Step 3 Done
+├── TrainingNutrition.Api/                ✅ Phase 5 Step 1 Done
 │   ├── DTOs/         (CreateIngredientRequest, RegisterRequest, LoginRequest)
 │   ├── Endpoints/    (IngredientsEndpoints, DailyLogsEndpoints, AuthEndpoints)
-│   ├── Program.cs    (DI registrations + Configure<JwtSettings> + AddAuthentication/JwtBearer + BearerSecuritySchemeTransformer + app.MapXxxEndpoints())
+│   ├── Exceptions/   (GlobalExceptionHandler)
+│   ├── Program.cs    (DI registrations + Configure<JwtSettings> + AddAuthentication/JwtBearer + AddProblemDetails + AddExceptionHandler + BearerSecuritySchemeTransformer + app.MapXxxEndpoints())
 │   └── BearerSecuritySchemeTransformer (IOpenApiDocumentTransformer — adds Bearer scheme to OpenAPI doc)
 └── TrainingNutrition.Tests/              ✅ 87 passing
     ├── Integration/  (CustomWebApplicationFactory, IngredientsIntegrationTests,
@@ -403,10 +410,10 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 
 ### 📋 Phase 5 — Cross-cutting Concerns
 
-**Step 1 — Global Exception Handling**
-- Create `TrainingNutrition.Api/Exceptions/GlobalExceptionHandler.cs` — implements `IExceptionHandler`; maps `InvalidOperationException` → 400, everything else → 500; writes Problem Details response
-- `Program.cs` — `services.AddProblemDetails()` + `services.AddExceptionHandler<GlobalExceptionHandler>()` + `app.UseExceptionHandler()`
-- Goal: single place for all unhandled exceptions; no stack traces leaking to clients; consistent Problem Details format (RFC 7807)
+**Step 1 — Global Exception Handling** ✅
+- `TrainingNutrition.Api/Exceptions/GlobalExceptionHandler.cs` — implements `IExceptionHandler`; primary constructor injects `IProblemDetailsService`; switch expression maps `ValidationException`/`InvalidOperationException` → 400, everything else → 500; calls `TryWriteAsync` with `ProblemDetailsContext`
+- `Program.cs` — `services.AddProblemDetails()` + `services.AddExceptionHandler<GlobalExceptionHandler>()` + `app.UseExceptionHandler()` already registered
+- ⚠️ Pending test: integration tests for `InvalidOperationException` → 400 and catch-all → 500 — to be added when a real handler throws those exceptions
 - ⚠️ .NET 10 note: diagnostics emitted only for unhandled exceptions (changed from .NET 8/9)
 
 **Step 2 — Structured Logging with Serilog**
