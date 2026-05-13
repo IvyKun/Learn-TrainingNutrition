@@ -16,6 +16,7 @@ using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Infrastructure;
 using TrainingNutrition.Infrastructure.Identity;
 using TrainingNutrition.Infrastructure.Repositories;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration));
 
 var app = builder.Build();
 
@@ -73,6 +75,7 @@ if (app.Environment.IsDevelopment())
 }
 
 //app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 
 app.UseExceptionHandler();
 app.UseAuthentication();

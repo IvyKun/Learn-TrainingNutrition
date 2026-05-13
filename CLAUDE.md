@@ -85,7 +85,7 @@ When I share my implementation:
 - `Repositories/EfDailyLogRepository.cs` — EF Core impl of `IDailyLogRepository`
 - `Migrations/` — `InitialCreate` applied ✅; `AddIdentity` applied ✅ (7 Identity tables: AspNetUsers, AspNetRoles, AspNetRoleClaims, AspNetUserClaims, AspNetUserLogins, AspNetUserRoles, AspNetUserTokens)
 
-**`TrainingNutrition.Api`** — API Layer ✅ Phase 5 Step 1 Complete
+**`TrainingNutrition.Api`** — API Layer ✅ Phase 5 Step 2 Complete
 - `Program.cs` — DI registrations only; endpoints extracted to `Endpoints/`; `Configure<JwtSettings>` registered; `AddAuthentication + AddJwtBearer` configured; `BearerSecuritySchemeTransformer` registered via `AddDocumentTransformer`; `AddProblemDetails()` + `AddExceptionHandler<GlobalExceptionHandler>()` + `UseExceptionHandler()` registered; `public partial class Program {}` at bottom for test visibility
 - `DTOs/CreateIngredientRequest.cs` — request DTO for POST /ingredients
 - `DTOs/RegisterRequest.cs` — request DTO for POST /auth/register
@@ -94,6 +94,7 @@ When I share my implementation:
 - `Endpoints/DailyLogsEndpoints.cs` — `GET /dailylogs/{date}` (200/400/500); reads `ClaimTypes.NameIdentifier` from `HttpContext.User` to extract authenticated UserId from JWT; with OpenAPI metadata
 - `Endpoints/AuthEndpoints.cs` — `POST /auth/register` (201/400) + `POST /auth/login` (200/401/400), with OpenAPI metadata
 - `Exceptions/GlobalExceptionHandler.cs` — implements `IExceptionHandler`; switch expression maps `ValidationException`/`InvalidOperationException` → 400, everything else → 500; writes Problem Details (RFC 7807) via `IProblemDetailsService.TryWriteAsync`; injected via constructor (primary constructor pattern)
+- Serilog configured — `AddSerilog(cfg => cfg.ReadFrom.Configuration(...))` in DI; `UseSerilogRequestLogging()` in middleware pipeline (before `UseExceptionHandler`); `Serilog` section in `appsettings.json` with `MinimumLevel: Information` + Console sink
 - Scalar.AspNetCore registered — interactive UI at `/scalar/v1` in Development; Bearer auth UI functional via `BearerSecuritySchemeTransformer`
 - ⚠️ Pending test: integration tests for `InvalidOperationException` → 400 and catch-all → 500 paths will be added when a real handler throws those exceptions
 
@@ -161,12 +162,16 @@ The student can explain the following with their own words:
 - **Problem Details (RFC 7807)** — standard HTTP error response format: `status`, `title`, `type`, `detail` fields; `IProblemDetailsService.TryWriteAsync` builds and writes it automatically from `ProblemDetailsContext`; injected in constructor, not in the method
 - **ProblemDetailsContext** — container passed to `IProblemDetailsService`; groups three things: `HttpContext` (the current request), `Exception` (what was thrown), and `ProblemDetails` (optional override for title/detail); status code is read from `httpContext.Response.StatusCode` — set it before calling `TryWriteAsync`
 - **Switch expression for exception mapping** — `exception switch { ValidationException => 400, InvalidOperationException => 400, _ => 500 }` maps exception types to status codes in a single expression; `_` is the catch-all default case
+- **Structured logging with Serilog** — instead of plain text, logs are JSON with separate fields (level, message, elapsed, etc.); `Serilog.AspNetCore` replaces the default .NET logging provider; configured via `appsettings.json` `Serilog` section; `UseSerilogRequestLogging()` adds one automatic log per HTTP request with method, route, status code and elapsed time
+- **`AddSerilog` vs `UseSerilog`** — `builder.Services.AddSerilog()` is the current API (Serilog.AspNetCore 8.0+); `builder.Host.UseSerilog()` was removed — never use it
+- **`Logging` section vs `Serilog` section** — once Serilog takes over, the default `Logging` section in `appsettings.json` is ignored; remove it to avoid confusion
+- **`appsettings.Development.json` purpose** — empty file that exists to receive Development-specific config overrides in future phases (Phase 6 Step 3); safe to keep empty
 
 ### Next Step
 
-**Phase 5 — Cross-cutting Concerns, Step 2 — Serilog**
+**Phase 5 — Cross-cutting Concerns, Step 3 — MediatR Logging Behavior**
 
-Phase 5 Step 1 complete ✅. Next: structured logging with Serilog.
+Phase 5 Step 2 complete ✅. Next: MediatR pipeline behavior that logs every command/query name and elapsed time.
 
 ---
 
@@ -416,11 +421,12 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - ⚠️ Pending test: integration tests for `InvalidOperationException` → 400 and catch-all → 500 — to be added when a real handler throws those exceptions
 - ⚠️ .NET 10 note: diagnostics emitted only for unhandled exceptions (changed from .NET 8/9)
 
-**Step 2 — Structured Logging with Serilog**
-- Install `Serilog.AspNetCore` (one package, includes sinks + configuration)
-- `Program.cs` — `builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration))` — replaces default .NET logging
-- `Program.cs` — `app.UseSerilogRequestLogging()` — automatic structured log per HTTP request (must be before endpoint mapping)
-- `appsettings.json` — add `Serilog` section with minimum level, Console sink
+**Step 2 — Structured Logging with Serilog** ✅
+- `Serilog.AspNetCore` NuGet installed in Api
+- `Program.cs` — `builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration))` replaces default .NET logging
+- `Program.cs` — `app.UseSerilogRequestLogging()` before `UseExceptionHandler()` — one structured log per HTTP request
+- `appsettings.json` — `Serilog` section with `MinimumLevel: Information` + Console sink; `Logging` section removed (ignored by Serilog)
+- `appsettings.Development.json` — `Logging` section removed; file kept empty for future Development overrides
 - ⚠️ .NET 10 note: `builder.Host.UseSerilog()` was REMOVED in Serilog.AspNetCore 8.0+ — use `builder.Services.AddSerilog()` instead
 
 **Step 3 — MediatR Logging Pipeline Behavior**
