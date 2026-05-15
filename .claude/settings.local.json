@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(dotnet test *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(dotnet build *)"
     ]
   }
 }
