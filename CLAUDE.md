@@ -72,6 +72,7 @@ When I share my implementation:
 - `DailyLogs/GetOrCreateDailyLogCommand.cs` + `GetOrCreateDailyLogHandler.cs` — gets or creates daily log, returns `DailyLogResponse`
 - `DailyLogs/DailyLogResponse.cs` — flat DTO with `Date` and `TotalCalories`
 - `Behaviors/ValidationBehavior.cs` — generic MediatR pipeline behavior, validates all commands before handler
+- `Behaviors/LoggingBehavior.cs` — generic MediatR pipeline behavior, logs command/query name and elapsed time; registered before ValidationBehavior so it measures total pipeline time
 - `Auth/RegisterCommand.cs` + `RegisterHandler.cs` + `RegisterCommandValidator.cs` — register user, returns `Guid`
 - `Auth/LoginCommand.cs` + `LoginHandler.cs` + `LoginCommandValidator.cs` — login, returns JWT string
 
@@ -166,12 +167,16 @@ The student can explain the following with their own words:
 - **`AddSerilog` vs `UseSerilog`** — `builder.Services.AddSerilog()` is the current API (Serilog.AspNetCore 8.0+); `builder.Host.UseSerilog()` was removed — never use it
 - **`Logging` section vs `Serilog` section** — once Serilog takes over, the default `Logging` section in `appsettings.json` is ignored; remove it to avoid confusion
 - **`appsettings.Development.json` purpose** — empty file that exists to receive Development-specific config overrides in future phases (Phase 6 Step 3); safe to keep empty
+- **MediatR pipeline behavior (generic constraints)** — `IPipelineBehavior<TRequest, TResponse>` requires `where TRequest : IRequest<TResponse>` and `where TResponse : notnull`; constraints come from the interface definition in MediatR — always read the interface signature before implementing it; F12 in the IDE shows the full definition
+- **`AddOpenBehavior` vs `AddTransient`** — `cfg.AddOpenBehavior(typeof(LoggingBehavior<,>))` inside `AddMediatR()` is the modern pattern; MediatR manages the behavior itself and controls order; `AddTransient(typeof(IPipelineBehavior<,>), ...)` works by coincidence of types but is not managed by MediatR — always use `AddOpenBehavior` for pipeline behaviors
+- **Behavior registration order matters** — behaviors execute in registration order; `LoggingBehavior` must be registered before `ValidationBehavior` so logging measures the total pipeline time including validation
+- **Open/Closed via pipeline behaviors** — adding a new Command/Query automatically gets logging applied; zero changes to existing handlers; the system is open to extension (new handlers) and closed to modification (no handler changes needed)
 
 ### Next Step
 
-**Phase 5 — Cross-cutting Concerns, Step 3 — MediatR Logging Behavior**
+**Phase 5 — Cross-cutting Concerns, Step 4 — Redis + HybridCache**
 
-Phase 5 Step 2 complete ✅. Next: MediatR pipeline behavior that logs every command/query name and elapsed time.
+Phase 5 Step 3 complete ✅. Next: add Redis to docker-compose, install HybridCache, apply caching to `GetIngredientByIdHandler`.
 
 ---
 
@@ -429,11 +434,10 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `appsettings.Development.json` — `Logging` section removed; file kept empty for future Development overrides
 - ⚠️ .NET 10 note: `builder.Host.UseSerilog()` was REMOVED in Serilog.AspNetCore 8.0+ — use `builder.Services.AddSerilog()` instead
 
-**Step 3 — MediatR Logging Pipeline Behavior**
-- Create `TrainingNutrition.Application/Behaviors/LoggingBehavior.cs` — implements `IPipelineBehavior<TRequest, TResponse>`; logs command/query name + elapsed time before and after handler execution
-- `Program.cs` — register via `cfg.AddOpenBehavior(typeof(LoggingBehavior<,>))` inside `AddMediatR()` — migrate existing `ValidationBehavior` registration to same pattern
-- Goal: every command/query execution is logged with timing — zero changes to handlers (Open/Closed)
-- ⚠️ .NET 10 note: `AddOpenBehavior()` inside `AddMediatR()` config replaces manual `AddTransient(typeof(IPipelineBehavior<,>), ...)` — both ValidationBehavior and LoggingBehavior registered this way
+**Step 3 — MediatR Logging Pipeline Behavior** ✅
+- `TrainingNutrition.Application/Behaviors/LoggingBehavior.cs` — implements `IPipelineBehavior<TRequest, TResponse>`; primary constructor injects `ILogger<LoggingBehavior<TRequest, TResponse>>`; logs command/query name before execution; `Stopwatch` measures elapsed time; logs name + ms after execution
+- `Program.cs` — `AddMediatR` expanded to `cfg => { RegisterServicesFromAssembly(...); cfg.AddOpenBehavior(typeof(LoggingBehavior<,>)); cfg.AddOpenBehavior(typeof(ValidationBehavior<,>)); }`; old `AddTransient` of ValidationBehavior removed
+- Order: LoggingBehavior first (measures total pipeline time including validation), ValidationBehavior second
 
 **Step 4 — Redis + HybridCache**
 - `docker-compose.yml` — add `redis:7-alpine` service; expose port 6379

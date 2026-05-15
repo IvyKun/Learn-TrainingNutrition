@@ -30,9 +30,13 @@ builder.Services.AddOpenApi(options =>
 // DI registrations
 builder.Services.AddScoped<IDailyLogRepository, EfDailyLogRepository>();
 builder.Services.AddScoped<IIngredientRepository, EfIngredientRepository>();
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateIngredientHandler).Assembly));
 builder.Services.AddValidatorsFromAssemblyContaining<CreateIngredientCommandValidator>();
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(CreateIngredientHandler).Assembly);
+    cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+});
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
