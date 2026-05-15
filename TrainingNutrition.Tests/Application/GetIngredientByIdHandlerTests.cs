@@ -4,6 +4,7 @@ using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Application.Ingredients;
 using TrainingNutrition.Domain.Common;
 using TrainingNutrition.Domain.Ingredients;
+using TrainingNutrition.Tests.Common;
 
 namespace TrainingNutrition.Tests.Application;
 
@@ -21,7 +22,7 @@ public sealed class GetIngredientByIdHandlerTests
         mockRepo.Setup(r => r.GetByIdAsync(ingredient.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ingredient);
 
-        var handler = new GetIngredientByIdHandler(mockRepo.Object);
+       var handler = new GetIngredientByIdHandler(mockRepo.Object, new NoOpHybridCache());
         var query = new GetIngredientByIdQuery(ingredient.Id);
 
         // Act
@@ -50,7 +51,7 @@ public sealed class GetIngredientByIdHandlerTests
         mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Ingredient?)null);
 
-        var handler = new GetIngredientByIdHandler(mockRepo.Object);
+       var handler = new GetIngredientByIdHandler(mockRepo.Object, new NoOpHybridCache());
         var query = new GetIngredientByIdQuery(Guid.NewGuid());
 
         // Act

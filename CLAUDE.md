@@ -171,12 +171,18 @@ The student can explain the following with their own words:
 - **`AddOpenBehavior` vs `AddTransient`** — `cfg.AddOpenBehavior(typeof(LoggingBehavior<,>))` inside `AddMediatR()` is the modern pattern; MediatR manages the behavior itself and controls order; `AddTransient(typeof(IPipelineBehavior<,>), ...)` works by coincidence of types but is not managed by MediatR — always use `AddOpenBehavior` for pipeline behaviors
 - **Behavior registration order matters** — behaviors execute in registration order; `LoggingBehavior` must be registered before `ValidationBehavior` so logging measures the total pipeline time including validation
 - **Open/Closed via pipeline behaviors** — adding a new Command/Query automatically gets logging applied; zero changes to existing handlers; the system is open to extension (new handlers) and closed to modification (no handler changes needed)
+- **Cache vs no-cache decision** — cache data that is read often and changes rarely (e.g. ingredients); never cache data that changes per-user or per-request (e.g. DailyLog)
+- **HybridCache L1+L2** — L1 is in-process memory (nanoseconds, local to one server); L2 is Redis (microseconds, shared across all servers); `GetOrCreateAsync` checks L1 → L2 → factory automatically; one API replaces two separate cache registrations
+- **Cache key design** — key must be unique per logical entity: `$"ingredient-{id}"` ensures each ingredient has its own slot; collisions cause wrong data to be returned
+- **HybridCache package placement** — `HybridCache` is a platform abstraction from `Microsoft.Extensions` (like `ILogger`) → belongs in Application; Redis implementation (`Microsoft.Extensions.Caching.StackExchangeRedis`) → belongs in Infrastructure; never install raw `StackExchange.Redis` — it comes as a transitive dependency of the StackExchangeRedis caching package
+- **NoOpHybridCache for unit tests** — `HybridCache` is an abstract class with no official test double yet (GitHub issue #5763 open); community pattern is a `NoOpHybridCache` that always calls the factory; implements 4 abstract methods: `GetOrCreateAsync<TState,T>`, `SetAsync<T>`, `RemoveAsync`, `RemoveByTagAsync`; `IEnumerable<string>?` not `IReadOnlyCollection<string>?` for tags parameter
+- **Lambda as factory parameter** — `async ct => { ... }` is an anonymous async function passed as argument; HybridCache only calls it on cache miss; `ct` is the CancellationToken HybridCache passes for the DB call, separate from the handler's own `cancellationToken`
 
 ### Next Step
 
-**Phase 5 — Cross-cutting Concerns, Step 4 — Redis + HybridCache**
+**Phase 6 — Production Readiness, Step 1 — Dockerize the API**
 
-Phase 5 Step 3 complete ✅. Next: add Redis to docker-compose, install HybridCache, apply caching to `GetIngredientByIdHandler`.
+Phase 5 complete ✅. Next: multi-stage Dockerfile for the API + add `api` service to docker-compose.
 
 ---
 
@@ -192,7 +198,7 @@ Phase 5 Step 3 complete ✅. Next: add Redis to docker-compose, install HybridCa
 | Validation | FluentValidation | Clean, chainable, pairs perfectly with MediatR pipeline |
 | Auth | JWT + ASP.NET Core Identity | Industry standard |
 | Testing | xUnit + Moq + WebApplicationFactory | Standard .NET testing stack |
-| Caching | Redis (when we get there) | Distributed cache, heavily requested in job offers |
+| Caching | Redis + HybridCache | Distributed cache, heavily requested in job offers |
 | Docs | Swagger / OpenAPI | Required in every enterprise project |
 | Containerization | Docker (when we get there) | Required in every job offer today |
 
@@ -439,12 +445,16 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `Program.cs` — `AddMediatR` expanded to `cfg => { RegisterServicesFromAssembly(...); cfg.AddOpenBehavior(typeof(LoggingBehavior<,>)); cfg.AddOpenBehavior(typeof(ValidationBehavior<,>)); }`; old `AddTransient` of ValidationBehavior removed
 - Order: LoggingBehavior first (measures total pipeline time including validation), ValidationBehavior second
 
-**Step 4 — Redis + HybridCache**
-- `docker-compose.yml` — add `redis:7-alpine` service; expose port 6379
-- Install `Microsoft.Extensions.Caching.Hybrid` + `StackExchange.Redis` in Infrastructure
-- `Program.cs` — `services.AddStackExchangeRedisCache()` + `services.AddHybridCache()`
-- Apply to `GetIngredientByIdHandler` — cache ingredient responses by Id; ingredients rarely change → ideal cache candidate
-- Goal: HybridCache combines L1 (in-memory) + L2 (Redis) automatically with a single `GetOrCreateAsync()` API
+**Step 4 — Redis + HybridCache** ✅
+- `docker-compose.yml` — `redis:7-alpine` service added; port 6379
+- `Microsoft.Extensions.Caching.StackExchangeRedis` in Infrastructure (Redis L2 implementation); `Microsoft.Extensions.Caching.Hybrid` in Application (HybridCache abstraction used in handlers) and Infrastructure (AddHybridCache registration)
+- `appsettings.json` — `"Redis": "localhost:6379"` added to `ConnectionStrings`
+- `Program.cs` — `AddStackExchangeRedisCache` + `AddHybridCache` registered after `AddDbContext`
+- `GetIngredientByIdHandler` — injects `HybridCache`; wraps repository call in `GetOrCreateAsync($"ingredient-{id}", async ct => { ... })`
+- `TrainingNutrition.Tests/Common/NoOpHybridCache.cs` — test double extending `HybridCache`; always calls factory (simulates cache miss); 4 abstract methods implemented: `GetOrCreateAsync<TState,T>`, `SetAsync<T>`, `RemoveAsync`, `RemoveByTagAsync`
+- `GetIngredientByIdHandlerTests` — passes `new NoOpHybridCache()` to handler constructor
+- 90 tests passing ✅
+- ⚠️ Package placement: `HybridCache` is a platform abstraction (like `ILogger`) → lives in Application; Redis implementation → lives in Infrastructure; never install `StackExchange.Redis` raw — use `Microsoft.Extensions.Caching.StackExchangeRedis` which brings it as transitive dependency
 
 ### 📋 Phase 6 — Production Readiness
 
