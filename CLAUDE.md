@@ -505,6 +505,7 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - Steps: `actions/checkout@v4` → `actions/setup-dotnet@v4` (`10.0.x`) → `dotnet restore` → `dotnet build --no-restore` → `dotnet test --no-build`
 - `Jwt__Secret` injected as env var from GitHub Actions secret `JWT_SECRET` — needed because factory uses `UseEnvironment("Development")` which loads User Secrets locally but not in CI
 - Redis NOT needed in CI — `NoOpHybridCache` in tests bypasses Redis entirely
+- `GlobalTestSettings.cs` — `[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]`; prevents race condition in CI where multiple `CustomWebApplicationFactory` instances call `Database.Migrate()` concurrently on the same empty test DB
 
 ---
 
