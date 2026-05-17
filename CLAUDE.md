@@ -198,9 +198,9 @@ The student can explain the following with their own words:
 
 ### Next Step
 
-**Phase 6 — Production Readiness, Step 4 — GitHub Actions CI/CD**
+**Phase 6 — Production Readiness completa ✅**
 
-Phase 6 Step 3 complete ✅. Next: `.github/workflows/ci.yml` — build + test automático en cada push.
+Todos los steps de Phase 6 completados. Próxima fase por definir.
 
 ---
 
@@ -499,11 +499,12 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `dotnet user-secrets set "Jwt:Secret" "..."` — JWT secret stored locally, only active in Development
 - Priority order (lowest → highest): `appsettings.json` → `appsettings.{env}.json` → User Secrets (dev only) → env vars
 
-**Step 4 — GitHub Actions CI/CD**
-- `.github/workflows/ci.yml` — on push to `develop` and PRs to `master`
-- Steps: `actions/setup-dotnet@v5` with `dotnet-version: '10.0.x'` → `dotnet build` → `dotnet test`
-- PostgreSQL service container in the workflow for integration tests
-- Goal: every push is validated automatically; broken builds are caught before merge
+**Step 4 — GitHub Actions CI/CD** ✅
+- `.github/workflows/ci.yml` — triggers on push to `develop` and PRs to `master`
+- PostgreSQL 17 service container in the workflow (`tnuser/tnpassword/trainingnutrition_test`); `pg_isready` healthcheck ensures DB is ready before steps run
+- Steps: `actions/checkout@v4` → `actions/setup-dotnet@v4` (`10.0.x`) → `dotnet restore` → `dotnet build --no-restore` → `dotnet test --no-build`
+- `Jwt__Secret` injected as env var from GitHub Actions secret `JWT_SECRET` — needed because factory uses `UseEnvironment("Development")` which loads User Secrets locally but not in CI
+- Redis NOT needed in CI — `NoOpHybridCache` in tests bypasses Redis entirely
 
 ---
 
