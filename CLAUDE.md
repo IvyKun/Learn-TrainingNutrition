@@ -177,12 +177,21 @@ The student can explain the following with their own words:
 - **HybridCache package placement** — `HybridCache` is a platform abstraction from `Microsoft.Extensions` (like `ILogger`) → belongs in Application; Redis implementation (`Microsoft.Extensions.Caching.StackExchangeRedis`) → belongs in Infrastructure; never install raw `StackExchange.Redis` — it comes as a transitive dependency of the StackExchangeRedis caching package
 - **NoOpHybridCache for unit tests** — `HybridCache` is an abstract class with no official test double yet (GitHub issue #5763 open); community pattern is a `NoOpHybridCache` that always calls the factory; implements 4 abstract methods: `GetOrCreateAsync<TState,T>`, `SetAsync<T>`, `RemoveAsync`, `RemoveByTagAsync`; `IEnumerable<string>?` not `IReadOnlyCollection<string>?` for tags parameter
 - **Lambda as factory parameter** — `async ct => { ... }` is an anonymous async function passed as argument; HybridCache only calls it on cache miss; `ct` is the CancellationToken HybridCache passes for the DB call, separate from the handler's own `cancellationToken`
+- **Docker multi-stage build** — two FROM stages in one Dockerfile; stage 1 (`sdk`) compiles and publishes; stage 2 (`aspnet`) copies only the published output; final image has no compiler, no source code, no dev dependencies
+- **Docker image variants for .NET** — Debian (default, largest, most compatible), Alpine (~110 MB, musl libc, has shell, globalization-invariant by default), Chiseled Ubuntu (~110 MB, glibc, no shell — Microsoft's production recommendation); use Alpine for learning (debuggable), Chiseled for production (minimal attack surface)
+- **Alpine globalization-invariant mode** — Alpine omits ICU library by default; affects locale-specific date/number formatting (`DateTime.ToString("d")`); does NOT affect ISO 8601 format (`"yyyy-MM-dd"`) or JSON serialization — a pure JSON API is unaffected
+- **Floating vs fixed Docker tags** — `10.0-alpine` always points to the current Alpine version for .NET 10 (Microsoft updates it); `10.0-alpine3.22` is pinned to a specific Alpine version; use floating for learning/dev (avoids stale version errors), use fixed for production CI (reproducible builds)
+- **.dockerignore** — excludes files from the Docker build context before COPY; if a file is in .dockerignore, a COPY instruction that references it will fail with "file not found"; always keep .dockerignore and Dockerfile consistent
+- **docker-compose healthcheck** — `test`, `interval`, `timeout`, `retries` define how Docker checks if a service is ready; `depends_on: condition: service_healthy` waits for the healthcheck to pass before starting dependent services; without this, the API starts before the DB is ready and connection fails
+- **Environment variables as config override in .NET** — `ConnectionStrings__DefaultConnection` (double underscore) maps to `ConnectionStrings:DefaultConnection` in JSON; env vars have higher priority than appsettings files; used in docker-compose to inject container-specific hostnames without changing appsettings.json
+- **Docker inter-service networking** — inside a compose network, services reach each other by service name (e.g. `postgres`, `redis`), not by `localhost`; `localhost` inside a container refers to the container itself, not the host machine
+- **DataProtection warning in Docker** — ASP.NET Core generates encryption keys stored inside the container; warning appears because keys are lost on container restart; irrelevant for JWT-based APIs (JWT validation uses the configured secret, not DataProtection keys)
 
 ### Next Step
 
-**Phase 6 — Production Readiness, Step 1 — Dockerize the API**
+**Phase 6 — Production Readiness, Step 2 — Health Checks**
 
-Phase 5 complete ✅. Next: multi-stage Dockerfile for the API + add `api` service to docker-compose.
+Phase 6 Step 1 complete ✅. Next: health check endpoints for PostgreSQL and Redis (`/health`).
 
 ---
 
@@ -212,7 +221,9 @@ Phase 5 complete ✅. Next: multi-stage Dockerfile for the API + add `api` servi
 TrainingNutrition/                        ← solution root
 ├── TrainingNutrition.slnx
 ├── CLAUDE.md
-├── docker-compose.yml                    ✅ PostgreSQL 17 container
+├── Dockerfile                            ✅ multi-stage build (sdk:10.0 → aspnet:10.0-alpine)
+├── .dockerignore                         ✅ excludes bin/, obj/, .git/, Tests/
+├── docker-compose.yml                    ✅ PostgreSQL 17 + Redis 7 + API container
 ├── TrainingNutrition.Domain/             ✅ Done
 │   ├── Common/       (Email, Grams, Macronutrients)
 │   ├── Dishes/       (Dish)
@@ -456,13 +467,15 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - 90 tests passing ✅
 - ⚠️ Package placement: `HybridCache` is a platform abstraction (like `ILogger`) → lives in Application; Redis implementation → lives in Infrastructure; never install `StackExchange.Redis` raw — use `Microsoft.Extensions.Caching.StackExchangeRedis` which brings it as transitive dependency
 
-### 📋 Phase 6 — Production Readiness
+### ✅ Phase 6 — Production Readiness
 
-**Step 1 — Dockerize the API**
-- `Dockerfile` at solution root — multi-stage build: `sdk:10.0` stage to compile, `aspnet:10.0-noble-chiseled` stage to run (~25 MB image); run as non-root (`USER app`)
-- `docker-compose.yml` — add `api` service; `depends_on` with `condition: service_healthy` for PostgreSQL and Redis; services communicate via Docker network using service names (not localhost)
-- Connection strings in `appsettings.json` updated to use Docker service hostnames (`db`, `redis`)
-- ⚠️ .NET 10 note: production image is `aspnet:10.0-noble-chiseled` (chiseled Ubuntu, no shell — smaller attack surface)
+**Step 1 — Dockerize the API** ✅
+- `Dockerfile` at solution root — multi-stage build: `sdk:10.0` stage to compile, `aspnet:10.0-alpine` stage to run; run as non-root (`USER app`)
+- `.dockerignore` at solution root — excludes `bin/`, `obj/`, `.git/`, `.vs/`, `.idea/`, `TrainingNutrition.Tests/`
+- `docker-compose.yml` — `api` service added; `healthcheck` on postgres (`pg_isready`) and redis (`redis-cli ping`); `depends_on` with `condition: service_healthy`; services communicate via Docker network using service names (`postgres`, `redis`)
+- Connection strings overridden via environment variables in compose (`ConnectionStrings__DefaultConnection`, `ConnectionStrings__Redis`) — `appsettings.json` unchanged for local dev
+- `dotnet restore` targets `TrainingNutrition.Api.csproj` directly (not the .slnx) to avoid conflict with Tests excluded by .dockerignore
+- Image choice: Alpine (`10.0-alpine`) — ~110 MB, has shell for debugging, glibc-compatible enough for this app; floating tag avoids version mismatch errors
 
 **Step 2 — Health Checks**
 - Install `AspNetCore.HealthChecks.NpgSql` + `AspNetCore.HealthChecks.Redis`

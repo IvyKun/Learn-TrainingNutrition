@@ -1,0 +1,6 @@
+**/bin/
+**/obj/
+**/.git/
+**/.vs/
+**/.idea/
+TrainingNutrition.Tests/

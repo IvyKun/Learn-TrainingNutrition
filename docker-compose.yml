@@ -11,12 +11,42 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tnuser -d trainingnutrition"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     container_name: trainingnutrition_redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5119:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=trainingnutrition;Username=tnuser;Password=tnpassword
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__Secret=ae138d515bc615b6204295be7ca61af4
+      - Jwt__Issuer=TrainingNutrition.Api
+      - Jwt__Audience=TrainingNutrition.Client
+      - Jwt__ExpiresInMinutes=60
 
 volumes:
   postgres_data:
