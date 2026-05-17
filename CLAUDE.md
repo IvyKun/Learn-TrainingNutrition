@@ -190,12 +190,17 @@ The student can explain the following with their own words:
 - **Health check endpoint must be public** — Docker, Kubernetes and monitors call `/health` without a token; never add `RequireAuthorization()` to a health check endpoint
 - **wget vs curl in Alpine** — Alpine images don't include `curl` by default but include `wget`; for Docker healthchecks in Alpine containers use `wget -qO- URL || exit 1`; `-q` silences output, `-O-` sends response to stdout
 - **HealthCheckOptions.ResponseWriter** — custom async delegate that writes the response; `report.Status` is the aggregated result; `report.Entries` is a dictionary of per-check results; default response is plain text ("Healthy") — override for JSON
+- **Configuration layering** — .NET loads config sources in order, each overriding the previous: `appsettings.json` → `appsettings.{env}.json` → User Secrets (dev only) → env vars; env vars always win, which is why docker-compose env vars override appsettings without touching the file
+- **User Secrets** — `dotnet user-secrets init` adds a GUID to the `.csproj`; `dotnet user-secrets set "Key:SubKey" "value"` stores the value in `%APPDATA%\Microsoft\UserSecrets\{guid}\secrets.json`; file never committed to git; only active when `ASPNETCORE_ENVIRONMENT=Development`
+- **`appsettings.Production.json`** — loaded automatically when `ASPNETCORE_ENVIRONMENT=Production`; only needs to contain the values that differ from `appsettings.json`; everything else is inherited
+- **Sensitive values in appsettings.json** — leave as `""` placeholder; real value comes from User Secrets (dev) or env vars (prod/docker); this way the file is safe to commit
+- **Port conflict between dotnet run and Docker** — both try to bind the same host port; solution: `docker compose stop api` before `dotnet run`; restart with `docker compose up -d api` when done
 
 ### Next Step
 
-**Phase 6 — Production Readiness, Step 3 — Environment-based Configuration + User Secrets**
+**Phase 6 — Production Readiness, Step 4 — GitHub Actions CI/CD**
 
-Phase 6 Step 2 complete ✅. Next: `appsettings.Production.json`, User Secrets para dev local, variables de entorno como override en producción.
+Phase 6 Step 3 complete ✅. Next: `.github/workflows/ci.yml` — build + test automático en cada push.
 
 ---
 
@@ -487,12 +492,12 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `Program.cs` — `MapHealthChecks("/health")` with custom JSON ResponseWriter (returns `status` + `checks` per dependency); no `RequireAuthorization()` — health checks must be publicly accessible
 - `docker-compose.yml` — `healthcheck` on `api` service using `wget` (no curl in Alpine); `start_period: 15s` gives app time to start before evaluation begins
 
-**Step 3 — Environment-based Configuration + User Secrets**
-- `appsettings.Development.json` — overrides for local dev (verbose logging, etc.)
-- `appsettings.Production.json` — production overrides (no stack traces, structured logging only)
-- User Secrets for local dev (`dotnet user-secrets`) — JWT secret, DB password; never committed to git
-- Environment variables override all config files — standard deployment pattern for containers
-- Priority order: CLI args → env vars → User Secrets → `appsettings.{env}.json` → `appsettings.json`
+**Step 3 — Environment-based Configuration + User Secrets** ✅
+- `appsettings.Production.json` created in Api — overrides `Serilog:MinimumLevel` to `Warning` (less noise in production)
+- `appsettings.json` — `Jwt:Secret` set to `""` (placeholder); real value comes from User Secrets in dev, env vars in Docker
+- `dotnet user-secrets init` — added `<UserSecretsId>` GUID to `TrainingNutrition.Api.csproj`; secrets stored in `%APPDATA%\Microsoft\UserSecrets\{guid}\secrets.json` (never committed to git)
+- `dotnet user-secrets set "Jwt:Secret" "..."` — JWT secret stored locally, only active in Development
+- Priority order (lowest → highest): `appsettings.json` → `appsettings.{env}.json` → User Secrets (dev only) → env vars
 
 **Step 4 — GitHub Actions CI/CD**
 - `.github/workflows/ci.yml` — on push to `develop` and PRs to `master`
