@@ -17,6 +17,7 @@ using TrainingNutrition.Infrastructure;
 using TrainingNutrition.Infrastructure.Identity;
 using TrainingNutrition.Infrastructure.Repositories;
 using Serilog;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,9 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder
 
 builder.Services.AddStackExchangeRedisCache(options => options.Configuration = builder.Configuration.GetConnectionString("Redis"));
 builder.Services.AddHybridCache();
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "postgres")
+    .AddRedis(builder.Configuration.GetConnectionString("Redis")!, name: "redis");
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -87,6 +91,22 @@ app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.ToDictionary(
+                e => e.Key,
+                e => e.Value.Status.ToString())
+        };
+        await context.Response.WriteAsJsonAsync(result);
+    }
+});
 
 app.MapIngredientsEndpoints();
 app.MapDailyLogsEndpoints();
