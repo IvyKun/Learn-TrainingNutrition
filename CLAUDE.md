@@ -186,12 +186,16 @@ The student can explain the following with their own words:
 - **Environment variables as config override in .NET** — `ConnectionStrings__DefaultConnection` (double underscore) maps to `ConnectionStrings:DefaultConnection` in JSON; env vars have higher priority than appsettings files; used in docker-compose to inject container-specific hostnames without changing appsettings.json
 - **Docker inter-service networking** — inside a compose network, services reach each other by service name (e.g. `postgres`, `redis`), not by `localhost`; `localhost` inside a container refers to the container itself, not the host machine
 - **DataProtection warning in Docker** — ASP.NET Core generates encryption keys stored inside the container; warning appears because keys are lost on container restart; irrelevant for JWT-based APIs (JWT validation uses the configured secret, not DataProtection keys)
+- **Health checks** — `AddHealthChecks()` registers the system; `.AddNpgSql()` / `.AddRedis()` add dependency-specific checks; `MapHealthChecks("/health")` exposes the endpoint; all checks run in parallel and the result is aggregated; used by Docker/Kubernetes to decide whether to restart a container or pull it from the load balancer
+- **Health check endpoint must be public** — Docker, Kubernetes and monitors call `/health` without a token; never add `RequireAuthorization()` to a health check endpoint
+- **wget vs curl in Alpine** — Alpine images don't include `curl` by default but include `wget`; for Docker healthchecks in Alpine containers use `wget -qO- URL || exit 1`; `-q` silences output, `-O-` sends response to stdout
+- **HealthCheckOptions.ResponseWriter** — custom async delegate that writes the response; `report.Status` is the aggregated result; `report.Entries` is a dictionary of per-check results; default response is plain text ("Healthy") — override for JSON
 
 ### Next Step
 
-**Phase 6 — Production Readiness, Step 2 — Health Checks**
+**Phase 6 — Production Readiness, Step 3 — Environment-based Configuration + User Secrets**
 
-Phase 6 Step 1 complete ✅. Next: health check endpoints for PostgreSQL and Redis (`/health`).
+Phase 6 Step 2 complete ✅. Next: `appsettings.Production.json`, User Secrets para dev local, variables de entorno como override en producción.
 
 ---
 
@@ -477,11 +481,11 @@ Key SOLID: **Single Responsibility (endpoints only orchestrate, never contain lo
 - `dotnet restore` targets `TrainingNutrition.Api.csproj` directly (not the .slnx) to avoid conflict with Tests excluded by .dockerignore
 - Image choice: Alpine (`10.0-alpine`) — ~110 MB, has shell for debugging, glibc-compatible enough for this app; floating tag avoids version mismatch errors
 
-**Step 2 — Health Checks**
-- Install `AspNetCore.HealthChecks.NpgSql` + `AspNetCore.HealthChecks.Redis`
-- `Program.cs` — `services.AddHealthChecks().AddNpgSql(...).AddRedis(...)`
-- `Program.cs` — `app.MapHealthChecks("/health")` with JSON response writer
-- Goal: Kubernetes / Docker liveness and readiness probes; operations can monitor service health without reading logs
+**Step 2 — Health Checks** ✅
+- `AspNetCore.HealthChecks.NpgSql` + `AspNetCore.HealthChecks.Redis` 9.0.0 installed in Api
+- `Program.cs` — `AddHealthChecks().AddNpgSql(..., name: "postgres").AddRedis(..., name: "redis")`
+- `Program.cs` — `MapHealthChecks("/health")` with custom JSON ResponseWriter (returns `status` + `checks` per dependency); no `RequireAuthorization()` — health checks must be publicly accessible
+- `docker-compose.yml` — `healthcheck` on `api` service using `wget` (no curl in Alpine); `start_period: 15s` gives app time to start before evaluation begins
 
 **Step 3 — Environment-based Configuration + User Secrets**
 - `appsettings.Development.json` — overrides for local dev (verbose logging, etc.)
