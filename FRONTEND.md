@@ -10,18 +10,18 @@ This is a portfolio project. The stack reflects what .NET full-stack job offers 
 
 ## Stack
 
-| Technology | Role | Why |
-|---|---|---|
-| **React 19** | UI framework | Most demanded in .NET full-stack offers |
-| **TypeScript** | Typed JavaScript | Mandatory in professional environments; natural for C# developers |
-| **Vite** | Build tool | Current standard — Create React App is deprecated |
-| **React Router v6** | Client-side navigation | Pages, protected routes, layout nesting |
-| **Axios** | HTTP client | API calls with JWT token in Authorization header |
-| **TanStack Query** | Server state management | Fetch, cache, loading/error states — one library replaces manual useEffect chains |
-| **Tailwind CSS** | Styling | Utility-first — fast to write, consistent, no separate CSS files |
-| **shadcn/ui** | Component library | Built on Tailwind — tables, modals, forms, dropdowns, ready to use |
-| **React Hook Form** | Form management | Controlled forms without boilerplate |
-| **Zod** | Schema validation | Typed validation that pairs with React Hook Form and mirrors FluentValidation on the backend |
+| Technology | Version (May 2026) | Role | Why |
+|---|---|---|---|
+| **React** | 19.2.6 | UI framework | Most demanded in .NET full-stack offers |
+| **TypeScript** | latest | Typed JavaScript | Mandatory in professional environments; natural for C# developers |
+| **Vite** | 8.x | Build tool | Current standard — uses Rolldown (Rust bundler), 10-30x faster builds |
+| **React Router** | v7.x | Client-side navigation | Pages, protected routes, layout nesting; v7 is stable and non-breaking upgrade from v6 |
+| **Axios** | latest | HTTP client | API calls with JWT token in Authorization header |
+| **TanStack Query** | 5.x | Server state management | Fetch, cache, loading/error states — one library replaces manual useEffect chains |
+| **Tailwind CSS** | v4 | Styling | Utility-first — no tailwind.config.js, CSS-native variables, zero-config content detection |
+| **shadcn/ui** | latest | Component library | Full support for Tailwind v4 + React 19 — tables, modals, forms, dropdowns, ready to use |
+| **React Hook Form** | latest | Form management | Controlled forms without boilerplate |
+| **Zod** | v4 | Schema validation | Stable as of May 19 2026 — 14x faster, 57% smaller bundle; pairs with React Hook Form |
 
 ---
 
@@ -42,7 +42,7 @@ Each phase introduces one new concept. Do not skip ahead.
 - Render a static page (no API yet)
 
 ### Phase 3 — Routing
-- Install React Router
+- Install React Router v7
 - `BrowserRouter`, `Routes`, `Route`
 - Pages: Login, Register, Dashboard (empty)
 - `Link` and `useNavigate` for navigation
