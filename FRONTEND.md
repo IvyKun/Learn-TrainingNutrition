@@ -97,50 +97,50 @@ Node.js must be installed locally (not in Docker). Download the LTS version from
 
 ## Build Checklist
 
-Steps in order. Each step is one session. Do not skip ahead.
+Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 
 ### Prerequisites
-- 📋 **Step 0** — Install Node.js LTS on the machine; verify `node --version` and `npm --version`
+- ✅ **Step 1** — Install Node.js LTS on the machine; verify `node --version` and `npm --version`
 
-### Phase 1 — Project setup
-- 📋 **Step 1** — Create `TrainingNutrition.Web/` with Vite (`npm create vite@latest`)
-- 📋 **Step 2** — Understand `package.json`, `tsconfig.json`, `vite.config.ts` — what each file controls
-- 📋 **Step 3** — Install all dependencies (React Router, Axios, TanStack Query, Tailwind, shadcn/ui, React Hook Form, Zod)
-- 📋 **Step 4** — Set up the folder structure (`src/api/`, `src/components/`, `src/pages/`, `src/hooks/`, `src/types/`)
+### Phase 1 — Project setup ✅
+- ✅ **Step 1** — Create `TrainingNutrition.Web/` with Vite (`npm create vite@latest`)
+- ✅ **Step 2** — Understand the generated file structure (`index.html`, `main.tsx`, `App.tsx`, config files)
+- ✅ **Step 3** — Install dependencies (React Router, Axios, TanStack Query, React Hook Form, Zod)
+- ✅ **Step 4** — Set up folder structure (`src/api/`, `src/components/`, `src/pages/`, `src/hooks/`, `src/types/`)
 
 ### Phase 2 — First component
-- 📋 **Step 5** — Build a static component in TypeScript — understand what a component is, props, `useState`
-- 📋 **Step 6** — Render a static page (no API calls yet)
+- 📋 **Step 1** — Build a static component in TypeScript — understand what a component is, props, `useState`
+- 📋 **Step 2** — Render a static page (no API calls yet)
 
 ### Phase 3 — Routing
-- 📋 **Step 7** — Add React Router: `BrowserRouter`, `Routes`, `Route`
-- 📋 **Step 8** — Create empty pages: Login, Register, Dashboard
-- 📋 **Step 9** — Add protected routes — redirect to `/login` if no JWT in `localStorage`
+- 📋 **Step 1** — Add React Router v7: `BrowserRouter`, `Routes`, `Route`
+- 📋 **Step 2** — Create empty pages: Login, Register, Dashboard
+- 📋 **Step 3** — Add protected routes — redirect to `/login` if no JWT in `localStorage`
 
 ### Phase 4 — API client + auth flow
-- 📋 **Step 10** — Create the Axios instance pointing to `http://localhost:5119` with JWT interceptor
-- 📋 **Step 11** — Build Register form → calls `POST /auth/register`
-- 📋 **Step 12** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
+- 📋 **Step 1** — Create the Axios instance pointing to `http://localhost:5119` with JWT interceptor
+- 📋 **Step 2** — Build Register form → calls `POST /auth/register`
+- 📋 **Step 3** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
 
 ### Phase 5 — TanStack Query
-- 📋 **Step 13** — Add `GET /ingredients` endpoint to the .NET backend (needed here for the first time)
-- 📋 **Step 14** — `useQuery` to fetch and display the ingredient list
-- 📋 **Step 15** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
+- 📋 **Step 1** — Add `GET /ingredients` endpoint to the .NET backend (needed here for the first time)
+- 📋 **Step 2** — `useQuery` to fetch and display the ingredient list
+- 📋 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
 
 ### Phase 6 — Forms with React Hook Form + Zod
-- 📋 **Step 16** — Add Zod schema validation to the create ingredient form
-- 📋 **Step 17** — Apply React Hook Form + Zod to Register and Login forms
-- 📋 **Step 18** — Per-field error messages (mirrors backend FluentValidation)
+- 📋 **Step 1** — Add Zod v4 schema validation to the create ingredient form
+- 📋 **Step 2** — Apply React Hook Form + Zod to Register and Login forms
+- 📋 **Step 3** — Per-field error messages (mirrors backend FluentValidation)
 
 ### Phase 7 — shadcn/ui
-- 📋 **Step 19** — Install and configure shadcn/ui on top of Tailwind
-- 📋 **Step 20** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
+- 📋 **Step 1** — Install and configure Tailwind v4 + shadcn/ui
+- 📋 **Step 2** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
 
 ### Phase 8 — Daily log flow
-- 📋 **Step 21** — Add v0.1 backend endpoints: `POST /dailylogs/{date}/meals`, `POST /dailylogs/{date}/meals/{mealId}/dishes`, extended `GET /dailylogs/{date}`
-- 📋 **Step 22** — Daily log page: display today's full breakdown (meals → dishes → entries)
-- 📋 **Step 23** — Add meal form + add dish form
-- 📋 **Step 24** — Date picker to navigate between days
+- 📋 **Step 1** — Add v0.1 backend endpoints: `POST /dailylogs/{date}/meals`, `POST /dailylogs/{date}/meals/{mealId}/dishes`, extended `GET /dailylogs/{date}`
+- 📋 **Step 2** — Daily log page: display today's full breakdown (meals → dishes → entries)
+- 📋 **Step 3** — Add meal form + add dish form
+- 📋 **Step 4** — Date picker to navigate between days
 
 ---
 
