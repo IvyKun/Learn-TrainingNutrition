@@ -113,9 +113,9 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 - 📋 **Step 2** — Render a static page (no API calls yet)
 
 ### Phase 3 — Routing
-- 📋 **Step 1** — Add React Router v7: `BrowserRouter`, `Routes`, `Route`
-- 📋 **Step 2** — Create empty pages: Login, Register, Dashboard
-- 📋 **Step 3** — Add protected routes — redirect to `/login` if no JWT in `localStorage`
+- ✅ **Step 1** — Add React Router v7: `BrowserRouter`, `Routes`, `Route`
+- ✅ **Step 2** — Create empty pages: Login, Register, Dashboard
+- ✅ **Step 3** — Add protected routes — redirect to `/login` if no JWT in `localStorage`
 
 ### Phase 4 — API client + auth flow
 - 📋 **Step 1** — Create the Axios instance pointing to `http://localhost:5119` with JWT interceptor
