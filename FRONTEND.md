@@ -133,7 +133,12 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 - 📋 **Step 3** — Per-field error messages (mirrors backend FluentValidation)
 
 ### Phase 7 — shadcn/ui
-- 📋 **Step 1** — Install and configure Tailwind v4 + shadcn/ui
+- ✅ **Step 1** — Install and configure Tailwind v4 + shadcn/ui
+  - `tailwindcss` + `@tailwindcss/vite` installed; plugin in `vite.config.ts`
+  - `src/index.css` replaced with `@import "tailwindcss"` + shadcn CSS variables
+  - Path alias `@/` → `src/` in `tsconfig.json` (root) + `tsconfig.app.json` + `vite.config.ts`; `"ignoreDeprecations": "6.0"` needed for TypeScript 6
+  - `npx shadcn@latest init` — Radix library, Nova preset (Lucide + Geist)
+  - `src/components/ui/button.tsx` + `src/lib/utils.ts` created; Button verified in browser
 - 📋 **Step 2** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
 
 ### Phase 8 — Daily log flow
