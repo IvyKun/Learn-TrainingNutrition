@@ -126,6 +126,7 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `name` field removed — `RegisterRequest` only accepts `email` + `password`
   - Error display shows generic message — improvement planned (Step 4)
   - CORS added to `Program.cs` (`AllowFrontend` policy for `http://localhost:5173`) to unblock browser requests
+  - Updated in Phase 7 Step 2 to use shadcn `Input`, `Button`, `Card` — centered layout with `flex min-h-screen items-center justify-center`
 - 📋 **Step 3** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
 - 📋 **Step 4** — Improve error display — read actual API message from `error.response.data` in catch blocks (Register + Login)
 
@@ -146,7 +147,12 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - Path alias `@/` → `src/` in `tsconfig.json` (root) + `tsconfig.app.json` + `vite.config.ts`; `"ignoreDeprecations": "6.0"` needed for TypeScript 6
   - `npx shadcn@latest init` — Radix library, Nova preset (Lucide + Geist)
   - `src/components/ui/button.tsx` + `src/lib/utils.ts` created; Button verified in browser
-- 📋 **Step 2** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
+- 🔄 **Step 2** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
+  - `npx shadcn@latest add input card` — `src/components/ui/input.tsx` + `src/components/ui/card.tsx` created
+  - `--background` changed to `oklch(0.96 0 0)` in `index.css` — light grey background, Card remains white
+  - `RegisterPage.tsx` updated: `Input`, `Button`, `Card`, `CardHeader`, `CardTitle`, `CardContent`; layout centered
+  - `LoginPage.tsx` — pending (will use same structure, built in Phase 4 Step 3)
+  - `Table` + `Dialog` — pending (ingredients list + modals, Phase 5+)
 
 ### Phase 9 — Admin panel (requires backend Admin Roadmap complete first)
 - 📋 **Step 1** — Admin page `/admin/users` — table with all users, protected by Admin role
