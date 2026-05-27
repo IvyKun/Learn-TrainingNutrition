@@ -18,7 +18,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
          return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
          {
             HttpContext = httpContext,
-            Exception = exception
+            Exception = exception,
+            ProblemDetails = { Detail = exception.Message }
          });
 
     }

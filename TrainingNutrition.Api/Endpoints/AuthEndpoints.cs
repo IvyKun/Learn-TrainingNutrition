@@ -15,16 +15,10 @@ public static class AuthEndpoints
             IMediator mediator, 
             CancellationToken cancellationToken) =>
         {
-            try
-            {
-                var command = new RegisterCommand(request.Email, request.Password);
-                var id = await mediator.Send(command, cancellationToken);
-                return Results.Created($"/auth/register/{id}", id);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
+          
+            var command = new RegisterCommand(request.Email, request.Password);
+            var id = await mediator.Send(command, cancellationToken);
+            return Results.Created($"/auth/register/{id}", id);
 
         })
         .WithName("RegisterUser")
@@ -49,7 +43,7 @@ public static class AuthEndpoints
             }
             catch (InvalidOperationException)
             {
-                return Results.Unauthorized();
+                return Results.Problem(detail: "Invalid credentials", statusCode: StatusCodes.Status401Unauthorized);
             }
 
         })

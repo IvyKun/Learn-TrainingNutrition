@@ -127,8 +127,12 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - Error display shows generic message — improvement planned (Step 4)
   - CORS added to `Program.cs` (`AllowFrontend` policy for `http://localhost:5173`) to unblock browser requests
   - Updated in Phase 7 Step 2 to use shadcn `Input`, `Button`, `Card` — centered layout with `flex min-h-screen items-center justify-center`
-- 📋 **Step 3** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
-- 📋 **Step 4** — Improve error display — read actual API message from `error.response.data` in catch blocks (Register + Login)
+- ✅ **Step 3** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
+  - `src/pages/LoginPage.tsx` — shadcn Input+Button+Card, `post<{ token: string }>` typed, `localStorage.setItem("token", response.data.token)` before `navigate("/")`
+- ✅ **Step 4** — Improve error display — `isAxiosError` guard + `error.response?.data?.detail` in both Register and Login
+  - Backend fix: `GlobalExceptionHandler` sets `ProblemDetails = { Detail = exception.Message }`
+  - Backend fix: Register endpoint — removed local try/catch, exceptions bubble to GlobalExceptionHandler
+  - Backend fix: Login endpoint — `Results.Problem(detail: "Invalid credentials", statusCode: 401)` instead of empty `Results.Unauthorized()`
 
 ### Phase 5 — TanStack Query
 - 📋 **Step 1** — Add `GET /ingredients` endpoint to the .NET backend (needed here for the first time)
