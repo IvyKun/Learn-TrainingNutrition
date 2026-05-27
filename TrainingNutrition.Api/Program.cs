@@ -73,6 +73,17 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -87,6 +98,7 @@ if (app.Environment.IsDevelopment())
 
 //app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
+app.UseCors("AllowFrontend");
 
 app.UseExceptionHandler();
 app.UseAuthentication();

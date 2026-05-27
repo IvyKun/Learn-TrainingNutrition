@@ -95,6 +95,15 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 
 ---
 
-## Next Step
+## CORS
 
-Backend completo ✅ (Phase 6). Ver FRONTEND.md para el siguiente paso.
+`AllowFrontend` policy configured in `Program.cs` — allows `http://localhost:5173` (React dev server) with any header and any method. Added when connecting the frontend in Phase 7.
+
+---
+
+## Next Steps
+
+- Backend Phases 0–6 ✅ complete
+- Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md` (Admin & Roles section)
+- v0.1 nutrition endpoints 📋 — see `ROADMAP_v0.1.md`
+- Frontend driving which backend endpoints get built next — see `FRONTEND.md`

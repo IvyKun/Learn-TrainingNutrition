@@ -118,9 +118,16 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 - ✅ **Step 3** — Add protected routes — redirect to `/login` if no JWT in `localStorage`
 
 ### Phase 4 — API client + auth flow
-- 📋 **Step 1** — Create the Axios instance pointing to `http://localhost:5119` with JWT interceptor
-- 📋 **Step 2** — Build Register form → calls `POST /auth/register`
+- ✅ **Step 1** — Create the Axios instance pointing to `http://localhost:5119` with JWT interceptor
+  - `src/api/client.ts` — `axios.create({ baseURL })` + `interceptors.request.use` to attach JWT from `localStorage`
+  - Double quotes throughout (matches Prettier default and shadcn)
+- ✅ **Step 2** — Build Register form → calls `POST /auth/register`
+  - `src/pages/RegisterPage.tsx` — controlled inputs (useState), async submit handler, navigate on success
+  - `name` field removed — `RegisterRequest` only accepts `email` + `password`
+  - Error display shows generic message — improvement planned (Step 4)
+  - CORS added to `Program.cs` (`AllowFrontend` policy for `http://localhost:5173`) to unblock browser requests
 - 📋 **Step 3** — Build Login form → calls `POST /auth/login`, stores JWT in `localStorage`, redirects to dashboard
+- 📋 **Step 4** — Improve error display — read actual API message from `error.response.data` in catch blocks (Register + Login)
 
 ### Phase 5 — TanStack Query
 - 📋 **Step 1** — Add `GET /ingredients` endpoint to the .NET backend (needed here for the first time)
@@ -140,6 +147,10 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `npx shadcn@latest init` — Radix library, Nova preset (Lucide + Geist)
   - `src/components/ui/button.tsx` + `src/lib/utils.ts` created; Button verified in browser
 - 📋 **Step 2** — Replace raw HTML with `Button`, `Input`, `Card`, `Table`, `Dialog` components
+
+### Phase 9 — Admin panel (requires backend Admin Roadmap complete first)
+- 📋 **Step 1** — Admin page `/admin/users` — table with all users, protected by Admin role
+- 📋 **Step 2** — Delete button per user → calls `DELETE /admin/users/{id}`
 
 ### Phase 8 — Daily log flow
 - 📋 **Step 1** — Add v0.1 backend endpoints: `POST /dailylogs/{date}/meals`, `POST /dailylogs/{date}/meals/{mealId}/dishes`, extended `GET /dailylogs/{date}`

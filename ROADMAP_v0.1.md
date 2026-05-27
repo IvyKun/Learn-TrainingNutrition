@@ -253,3 +253,57 @@ The three fields are added as nullable values to the full log response from v0.1
 | 2 | Log sleep duration | `PATCH /dailylogs/{date}/sleep` | Optional, overwrites |
 | 3 | Log step count | `PATCH /dailylogs/{date}/steps` | Optional, overwrites |
 | 4 | Daily log response | `GET /dailylogs/{date}` | Extended with `weightKg`, `sleepHours`, `steps` (nullable) |
+
+---
+
+---
+
+# TrainingNutrition API — Admin & Roles
+
+## Context
+
+During frontend development, the need to inspect and delete test users became evident. This also provides the natural opportunity to introduce role-based authorization: some endpoints are only accessible to users with the `Admin` role.
+
+---
+
+## What This Adds
+
+### 1. Roles
+
+Introduce two roles: `Admin` and `User`. All existing registered users are `User` by default. One admin user is seeded at startup for development use.
+
+---
+
+### 2. List All Users
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/admin/users` | Admin role | Returns all registered users |
+
+**Example response:**
+```json
+[
+  { "id": "...", "email": "test@example.com", "roles": ["User"] },
+  { "id": "...", "email": "admin@example.com", "roles": ["Admin"] }
+]
+```
+
+---
+
+### 3. Delete a User
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `DELETE` | `/admin/users/{id}` | Admin role | Permanently deletes the user |
+
+**Response:** `204 No Content`
+
+---
+
+## Summary
+
+| # | Feature | Endpoint | Status |
+|---|---|---|---|
+| 1 | Role setup (Admin / User) + seed admin | — | 📋 Missing |
+| 2 | List users | `GET /admin/users` | 📋 Missing |
+| 3 | Delete user | `DELETE /admin/users/{id}` | 📋 Missing |
