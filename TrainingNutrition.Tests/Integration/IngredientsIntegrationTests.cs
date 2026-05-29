@@ -120,4 +120,71 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetIngredients_NoSearch_ReturnsAll ()
+    {   
+         // Arrange
+
+        CreateIngredientRequest request1 = new(
+        Name: "Chicken Breast",
+        Protein: 31,
+        Carbs: 0,
+        Fat: 3.6m,
+        Fiber: 0,
+        Salt: 0.07m);
+
+        await _httpClient.PostAsJsonAsync("/ingredients", request1);
+
+        CreateIngredientRequest request2 = new(
+        Name: "Chicken Breast 2",
+        Protein: 31,
+        Carbs: 0,
+        Fat: 3.6m,
+        Fiber: 0,
+        Salt: 0.07m);
+
+        await _httpClient.PostAsJsonAsync("/ingredients", request2);
+
+        string searchTerm = string.Empty;
+
+         // Act
+        HttpResponseMessage response = await _httpClient.GetAsync($"/ingredients?search={searchTerm}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        IReadOnlyList<IngredientResponse>? ingredients = await response.Content.ReadFromJsonAsync<IReadOnlyList<IngredientResponse>>();
+        Assert.NotNull(ingredients);
+        Assert.NotEmpty(ingredients);
+        Assert.Equal(2, ingredients.Count);
+    }
+
+    [Fact]
+    public async Task GetIngredients_WithSearch_ReturnsFiltered  ()
+    {   
+         // Arrange — create one first
+        CreateIngredientRequest request = new(
+            Name: "Chicken Breast",
+            Protein: 31,
+            Carbs: 0,
+            Fat: 3.6m,
+            Fiber: 0,
+            Salt: 0.07m);
+
+        HttpResponseMessage createResponse = await _httpClient.PostAsJsonAsync("/ingredients", request);
+        
+        string searchTerm = "chicken";
+
+         // Act
+        HttpResponseMessage response = await _httpClient.GetAsync($"/ingredients?search={searchTerm}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        IReadOnlyList<IngredientResponse>? ingredients = await response.Content.ReadFromJsonAsync<IReadOnlyList<IngredientResponse>>();
+        Assert.NotNull(ingredients);
+        Assert.NotEmpty(ingredients);
+        Assert.Equal("Chicken Breast", ingredients.FirstOrDefault()?.Name);
+    }
+
 }

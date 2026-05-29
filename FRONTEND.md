@@ -137,7 +137,7 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 ### Phase 5 — TanStack Query
 - 🔄 **Step 1** — Backend prerequisites (do this before touching the frontend):
   - ✅ Add `Brand` field to `Ingredient` entity — domain change + migration (`AddBrandToIngredient`); affects `POST /ingredients` and all ingredient responses
-  - `GET /ingredients?search=` — returns all, or filtered by name/brand if search term provided
+  - ✅ `GET /ingredients?search=` — returns all, or filtered by name/brand if search term provided
   - `PUT /ingredients/{id}` — edit ingredient (backend only; frontend UI comes later)
   - `DELETE /ingredients/{id}` — delete ingredient (backend only; frontend UI comes later)
 - 📋 **Step 2** — `useQuery` to fetch and display the ingredient list

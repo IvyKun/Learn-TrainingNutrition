@@ -51,5 +51,23 @@ public static class IngredientsEndpoints
         .Produces<IngredientResponse>(StatusCodes.Status200OK)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .RequireAuthorization();
+
+        // GET /ingredients?search={searchTerm}
+        app.MapGet("/ingredients", async (
+            string? searchTerm, 
+            IMediator mediator, 
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetIngredientsQuery(searchTerm);
+            var ingredientResponse = await mediator.Send(query, cancellationToken);
+
+            return Results.Ok(ingredientResponse);
+
+        })
+        .WithName("GetIngredients")
+        .WithTags("Ingredients")
+        .WithSummary("Get all ingredients that match a search term or the whole list")
+        .Produces<IReadOnlyList<IngredientResponse>>(StatusCodes.Status200OK)
+        .RequireAuthorization();
     }
 }
