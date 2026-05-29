@@ -20,6 +20,10 @@ public class IngredientConfiguration : IEntityTypeConfiguration<Ingredient>
         builder.HasIndex(x => x.Name)
             .IsUnique();
 
+        // Brand column: max length from domain validation
+        builder.Property(x => x.Brand)
+            .HasMaxLength(100);
+
         // MacrosPer100g is a Value Object — maps to columns in the same table (owned type)
         builder.OwnsOne(x => x.MacrosPer100g, macro =>
         {

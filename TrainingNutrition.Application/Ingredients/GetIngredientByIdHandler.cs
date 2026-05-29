@@ -29,6 +29,7 @@ public class GetIngredientByIdHandler : IRequestHandler<GetIngredientByIdQuery, 
                 return new IngredientResponse(
                     ingredient.Id,
                     ingredient.Name,
+                    ingredient.Brand,
                     ingredient.MacrosPer100g.Protein,
                     ingredient.MacrosPer100g.Carbs,
                     ingredient.MacrosPer100g.Fat,

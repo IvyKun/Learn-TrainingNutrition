@@ -7,6 +7,7 @@ public sealed class CreateIngredientCommandValidator : AbstractValidator<CreateI
     public CreateIngredientCommandValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Brand).MaximumLength(100);
 
         RuleFor(x => x.Protein).GreaterThanOrEqualTo(0);
         RuleFor(x => x.Carbs).GreaterThanOrEqualTo(0);

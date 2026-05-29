@@ -6,5 +6,6 @@ public sealed record CreateIngredientRequest(
     decimal Carbs,
     decimal Fat,
     decimal Fiber,
-    decimal Salt
+    decimal Salt,
+    string? Brand = null
 );

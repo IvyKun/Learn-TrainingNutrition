@@ -15,7 +15,7 @@ public static class IngredientsEndpoints
             IMediator mediator, 
             CancellationToken cancellationToken) =>
         {
-            var command = new CreateIngredientCommand(request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
+            var command = new CreateIngredientCommand(request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt, request.Brand);
             var id = await mediator.Send(command, cancellationToken);
 
             return Results.Created($"/ingredients/{id}", id);

@@ -9,5 +9,6 @@ public sealed record CreateIngredientCommand(
     decimal Carbs,
     decimal Fat,
     decimal Fiber,
-    decimal Salt
+    decimal Salt,
+    string? Brand = null
 ) : IRequest<Guid>;

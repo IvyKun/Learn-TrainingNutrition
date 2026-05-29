@@ -17,7 +17,7 @@ public class CreateIngredientHandler : IRequestHandler<CreateIngredientCommand, 
     public async Task<Guid> Handle(CreateIngredientCommand request, CancellationToken cancellationToken)
     {
         var macros = new Macronutrients(request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt);
-        var ingredient = new Ingredient(request.Name, macros);
+        var ingredient = new Ingredient(request.Name, macros, request.Brand);
 
         await _ingredientRepository.AddAsync(ingredient, cancellationToken);
 
