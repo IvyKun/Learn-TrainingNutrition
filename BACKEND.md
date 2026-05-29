@@ -88,8 +88,11 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 |---|---|---|---|
 | POST | /auth/register | No | Register user → 201 Guid |
 | POST | /auth/login | No | Login → 200 JWT string |
-| POST | /ingredients | Yes | Create ingredient → 201 Guid |
-| GET | /ingredients/{id} | Yes | Get ingredient → 200 / 404 |
+| POST | /ingredients | Yes | Create ingredient (with Brand) → 201 Guid |
+| GET | /ingredients | Yes | Search ingredients by name/brand → 200 list |
+| GET | /ingredients/{id} | Yes | Get ingredient by id → 200 / 404 |
+| PUT | /ingredients/{id} | Yes | Edit ingredient → 204 |
+| DELETE | /ingredients/{id} | Yes | Delete ingredient → 204 |
 | GET | /dailylogs/{date} | Yes | Get or create daily log → 200 |
 | GET | /health | No | Health check → JSON |
 
@@ -104,6 +107,11 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 ## Next Steps
 
 - Backend Phases 0–6 ✅ complete
-- Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md` (Admin & Roles section)
+- **Next — ingredient CRUD (Phase 5 backend prerequisite):**
+  1. Add `Brand` field to `Ingredient` — domain change + migration
+  2. `GET /ingredients?search=` — search by name or brand, returns all if no search term
+  3. `PUT /ingredients/{id}` — edit ingredient
+  4. `DELETE /ingredients/{id}` — delete ingredient
+- Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md`
 - v0.1 nutrition endpoints 📋 — see `ROADMAP_v0.1.md`
 - Frontend driving which backend endpoints get built next — see `FRONTEND.md`

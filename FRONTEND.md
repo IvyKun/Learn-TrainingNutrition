@@ -135,7 +135,11 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - Backend fix: Login endpoint — `Results.Problem(detail: "Invalid credentials", statusCode: 401)` instead of empty `Results.Unauthorized()`
 
 ### Phase 5 — TanStack Query
-- 📋 **Step 1** — Add `GET /ingredients` endpoint to the .NET backend (needed here for the first time)
+- 🔄 **Step 1** — Backend prerequisites (do this before touching the frontend):
+  - Add `Brand` field to `Ingredient` entity — domain change + migration; affects `POST /ingredients` and all ingredient responses
+  - `GET /ingredients?search=` — returns all, or filtered by name/brand if search term provided
+  - `PUT /ingredients/{id}` — edit ingredient (backend only; frontend UI comes later)
+  - `DELETE /ingredients/{id}` — delete ingredient (backend only; frontend UI comes later)
 - 📋 **Step 2** — `useQuery` to fetch and display the ingredient list
 - 📋 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
 
@@ -156,7 +160,7 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `--background` changed to `oklch(0.96 0 0)` in `index.css` — light grey background, Card remains white
   - `RegisterPage.tsx` updated: `Input`, `Button`, `Card`, `CardHeader`, `CardTitle`, `CardContent`; layout centered
   - `LoginPage.tsx` — pending (will use same structure, built in Phase 4 Step 3)
-  - `Table` + `Dialog` — pending (ingredients list + modals, Phase 5+)
+  - `Table` + `Dialog` — will be added during Phase 5 when building the ingredients page (not a separate step)
 
 ### Phase 9 — Admin panel (requires backend Admin Roadmap complete first)
 - 📋 **Step 1** — Admin page `/admin/users` — table with all users, protected by Admin role
