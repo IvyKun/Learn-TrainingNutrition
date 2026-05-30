@@ -6,17 +6,26 @@ public sealed class Ingredient
 {
     public Guid Id { get; private init; } = Guid.NewGuid();
 
-    public string Name { get; }
+    public string Name { get; private set; }
 
-    public string? Brand { get; }
+    public string? Brand { get; private set; }
 
-    public Macronutrients MacrosPer100g { get; }
+
+    public Macronutrients MacrosPer100g  { get; private set; }
+
 
     public int CaloriesPer100g => MacrosPer100g.Calories;
 
     private Ingredient() { } // For EF Core only
     
     public Ingredient(string name, Macronutrients macrosPer100g, string? brand = null)
+    {
+        Name = ValidateName(name);
+        Brand = ValidateBrand(brand);
+        MacrosPer100g = macrosPer100g ?? throw new ArgumentNullException(nameof(macrosPer100g));
+    }
+
+    public void Update(string name, Macronutrients macrosPer100g, string? brand)
     {
         Name = ValidateName(name);
         Brand = ValidateBrand(brand);

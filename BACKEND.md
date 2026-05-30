@@ -25,7 +25,7 @@ TrainingNutrition/
 ├── docker-compose.yml                    ✅ PostgreSQL 17 + Redis 7 + API container
 ├── .github/workflows/ci.yml             ✅ GitHub Actions CI
 ├── TrainingNutrition.Domain/
-│   ├── Common/       (Email, Grams, Macronutrients)
+│   ├── Common/       (Email, Grams, Macronutrients, NotFoundException)
 │   ├── Dishes/       (Dish)
 │   ├── Ingredients/  (Ingredient, IngredientEntry)
 │   ├── Meals/        (Meal, MealType)
@@ -41,11 +41,11 @@ TrainingNutrition/
 ├── TrainingNutrition.Application/
 │   ├── Abstractions/                     (IIngredientRepository, IDailyLogRepository, IIdentityService)
 │   ├── Behaviors/                        (ValidationBehavior, LoggingBehavior)
-│   ├── Ingredients/                      (Create command, GetById query, IngredientResponse)
+│   ├── Ingredients/                      (Create/Update commands + validators + handlers, GetById/GetAll queries + handlers, IngredientResponse)
 │   ├── DailyLogs/                        (GetOrCreate command, DailyLogResponse)
 │   └── Auth/                             (Register command, Login command + validators)
 ├── TrainingNutrition.Api/
-│   ├── DTOs/                             (CreateIngredientRequest, RegisterRequest, LoginRequest)
+│   ├── DTOs/                             (CreateIngredientRequest, UpdateIngredientRequest, RegisterRequest, LoginRequest)
 │   ├── Endpoints/                        (IngredientsEndpoints, DailyLogsEndpoints, AuthEndpoints)
 │   ├── Exceptions/                       (GlobalExceptionHandler)
 │   ├── BearerSecuritySchemeTransformer
@@ -75,7 +75,7 @@ Minimal API endpoints in `Endpoints/`. Swagger/OpenAPI + Scalar UI. GlobalExcept
 ASP.NET Core Identity setup. Register + Login endpoints. JWT generation (JwtSecurityTokenHandler). JWT middleware (AddAuthentication + AddJwtBearer). RequireAuthorization() on protected endpoints. Real UserId from claims in DailyLogsEndpoints.
 
 ### ✅ Phase 5 — Cross-cutting Concerns
-GlobalExceptionHandler (ValidationException/InvalidOperationException → 400, catch-all → 500). Serilog structured logging + UseSerilogRequestLogging(). MediatR LoggingBehavior (measures total pipeline time). Redis + HybridCache in GetIngredientByIdHandler. NoOpHybridCache test double.
+GlobalExceptionHandler (ValidationException/InvalidOperationException → 400, NotFoundException → 404, catch-all → 500). Serilog structured logging + UseSerilogRequestLogging(). MediatR LoggingBehavior (measures total pipeline time). Redis + HybridCache in GetIngredientByIdHandler. NoOpHybridCache test double.
 
 ### ✅ Phase 6 — Production Readiness
 Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). Health checks (/health — PostgreSQL + Redis, JSON response, public). appsettings.Production.json + User Secrets for Jwt:Secret. GitHub Actions CI (postgres service container + Jwt__Secret from GitHub secret).
@@ -110,7 +110,7 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 - **Ingredient CRUD (Phase 5 backend prerequisite):**
   1. ✅ Add `Brand` field to `Ingredient` — domain change + migration (`AddBrandToIngredient`)
   2. ✅ `GET /ingredients?search=` — search by name or brand, returns all if no search term
-  3. `PUT /ingredients/{id}` — edit ingredient
+  3. 🔄 `PUT /ingredients/{id}` — implementación completa; tests pendientes (integration en `IngredientIntregrationTests`, unit en `UpdateIngredientHandlerTests`)
   4. `DELETE /ingredients/{id}` — delete ingredient
 - Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md`
 - v0.1 nutrition endpoints 📋 — see `ROADMAP_v0.1.md`

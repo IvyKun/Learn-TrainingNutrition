@@ -28,6 +28,27 @@ public static class IngredientsEndpoints
         .ProducesValidationProblem()
         .RequireAuthorization();
 
+        // PUT /ingredients/{id}
+        app.MapPut("/ingredients/{id}", async (
+            Guid id,
+            UpdateIngredientRequest request, 
+            IMediator mediator, 
+            CancellationToken cancellationToken) =>
+        {
+            var command = new UpdateIngredientCommand(id, request.Name, request.Protein, request.Carbs, request.Fat, request.Fiber, request.Salt, request.Brand);
+            await mediator.Send(command, cancellationToken);
+
+            return Results.NoContent();
+
+        })
+        .WithName("UpdateIngredient")
+        .WithTags("Ingredients")
+        .WithSummary("Update an ingredient")
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesValidationProblem()
+        .RequireAuthorization();
+
         // GET /ingredients/{id}
         app.MapGet("/ingredients/{id}", async (
             Guid id, 

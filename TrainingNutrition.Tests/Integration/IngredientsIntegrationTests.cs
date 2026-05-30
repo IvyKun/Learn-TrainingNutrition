@@ -33,6 +33,8 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         return Task.CompletedTask;
     }
 
+    // Create
+
     [Fact]
     public async Task PostIngredient_ValidRequest_Returns200WithId()
     {
@@ -54,6 +56,32 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Guid id = await response.Content.ReadFromJsonAsync<Guid>();
         Assert.NotEqual(Guid.Empty, id);
     }
+
+    // Update
+
+    [Fact]
+    public async Task PostIngredient_ValidRequest_Returns200WithId()
+    {
+        // Arrange
+        CreateIngredientRequest request = new(
+            Name: "Chicken Breast",
+            Protein: 31,
+            Carbs: 0,
+            Fat: 3.6m,
+            Fiber: 0,
+            Salt: 0.07m);
+
+        // Act
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync("/ingredients", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        Guid id = await response.Content.ReadFromJsonAsync<Guid>();
+        Assert.NotEqual(Guid.Empty, id);
+    }
+
+    // Get
 
     [Fact]
     public async Task GetIngredient_ExistingId_Returns200WithData()
@@ -91,34 +119,7 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // Auth
-
-    [Fact]
-    public async Task CreateIngredient_WithoutToken_Returns401()
-    {
-        // Arrange
-        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
-        CreateIngredientRequest request = new("Chicken", 31, 0, 3.6m, 0, 0.1m);
-
-        // Act
-        HttpResponseMessage response = await unauthenticatedClient.PostAsJsonAsync("/ingredients", request);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetIngredient_WithoutToken_Returns401()
-    {
-        // Arrange
-        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
-
-        // Act
-        HttpResponseMessage response = await unauthenticatedClient.GetAsync($"/ingredients/{Guid.NewGuid()}");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
+    
 
     [Fact]
     public async Task GetIngredients_NoSearch_ReturnsAll ()
@@ -185,6 +186,36 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Assert.NotNull(ingredients);
         Assert.NotEmpty(ingredients);
         Assert.Equal("Chicken Breast", ingredients.FirstOrDefault()?.Name);
+    }
+
+
+    // Auth
+
+    [Fact]
+    public async Task CreateIngredient_WithoutToken_Returns401()
+    {
+        // Arrange
+        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
+        CreateIngredientRequest request = new("Chicken", 31, 0, 3.6m, 0, 0.1m);
+
+        // Act
+        HttpResponseMessage response = await unauthenticatedClient.PostAsJsonAsync("/ingredients", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetIngredient_WithoutToken_Returns401()
+    {
+        // Arrange
+        HttpClient unauthenticatedClient = _factory.CreateUnauthenticatedClient();
+
+        // Act
+        HttpResponseMessage response = await unauthenticatedClient.GetAsync($"/ingredients/{Guid.NewGuid()}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
 }

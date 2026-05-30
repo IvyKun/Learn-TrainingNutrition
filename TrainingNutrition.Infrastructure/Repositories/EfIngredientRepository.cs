@@ -21,6 +21,12 @@ public class EfIngredientRepository : IIngredientRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateAsync(Ingredient ingredient, CancellationToken cancellationToken = default)
+    {
+         // EF Core change tracker detects the mutation automatically after GetByIdAsync
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Ingredient>> GetAllAsync(string? searchTerm, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
