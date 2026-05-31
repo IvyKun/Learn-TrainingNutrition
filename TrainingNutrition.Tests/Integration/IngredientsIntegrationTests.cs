@@ -116,6 +116,47 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+
+    // Delete
+
+    [Fact]
+    public async Task DeleteIngredient_ValidRequest_Returns204()
+    {
+        // Arrange
+        CreateIngredientRequest createRequest = new(
+            Name: "Chicken Breast",
+            Protein: 31,
+            Carbs: 0,
+            Fat: 3.6m,
+            Fiber: 0,
+            Salt: 0.07m);
+
+        HttpResponseMessage createResponse = await _httpClient.PostAsJsonAsync("/ingredients", createRequest);
+        Guid id = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+        // Act
+        HttpResponseMessage response = await _httpClient.DeleteAsync($"/ingredients/{id}");
+
+       // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+       // Verify the delete worked
+        HttpResponseMessage getResponse = await _httpClient.GetAsync($"/ingredients/{id}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteIngredient_NonExistingId_Returns404()
+    {
+        // Arrange
+
+        // Act
+        HttpResponseMessage response = await _httpClient.DeleteAsync($"/ingredients/{Guid.NewGuid()}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     
     // Get
 

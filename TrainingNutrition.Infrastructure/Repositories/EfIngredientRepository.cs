@@ -27,6 +27,18 @@ public class EfIngredientRepository : IIngredientRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var ingredient = await _db.Ingredients.FindAsync([id], cancellationToken);
+        if(ingredient is null)
+        {
+            return;
+        }
+
+        _db.Ingredients.Remove(ingredient);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Ingredient>> GetAllAsync(string? searchTerm, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))

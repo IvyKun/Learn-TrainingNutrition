@@ -49,6 +49,26 @@ public static class IngredientsEndpoints
         .ProducesValidationProblem()
         .RequireAuthorization();
 
+         // DELETE /ingredients/{id}
+        app.MapDelete("/ingredients/{id}", async (
+            Guid id,
+            IMediator mediator, 
+            CancellationToken cancellationToken) =>
+        {
+            var command = new DeleteIngredientCommand(id);
+            await mediator.Send(command, cancellationToken);
+
+            return Results.NoContent();
+
+        })
+        .WithName("DeleteIngredient")
+        .WithTags("Ingredients")
+        .WithSummary("Delete an ingredient")
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesValidationProblem()
+        .RequireAuthorization();
+
         // GET /ingredients/{id}
         app.MapGet("/ingredients/{id}", async (
             Guid id, 
