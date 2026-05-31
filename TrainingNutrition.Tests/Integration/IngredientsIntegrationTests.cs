@@ -60,10 +60,10 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
     // Update
 
     [Fact]
-    public async Task PostIngredient_ValidRequest_Returns200WithId()
+    public async Task UpdateIngredient_ValidRequest_Returns204()
     {
         // Arrange
-        CreateIngredientRequest request = new(
+        CreateIngredientRequest createRequest = new(
             Name: "Chicken Breast",
             Protein: 31,
             Carbs: 0,
@@ -71,16 +71,52 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
             Fiber: 0,
             Salt: 0.07m);
 
+        HttpResponseMessage createResponse = await _httpClient.PostAsJsonAsync("/ingredients", createRequest);
+        Guid id = await createResponse.Content.ReadFromJsonAsync<Guid>();
+
+        UpdateIngredientRequest request = new(
+            Name: "Chicken Breast",
+            Protein: 31,
+            Carbs: 0,
+            Fat: 3.6m,
+            Fiber: 0,
+            Salt: 0.07m,
+            Brand: "Mercadona");
+
         // Act
-        HttpResponseMessage response = await _httpClient.PostAsJsonAsync("/ingredients", request);
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"/ingredients/{id}", request);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        Guid id = await response.Content.ReadFromJsonAsync<Guid>();
-        Assert.NotEqual(Guid.Empty, id);
+       // Verify the update was applied
+        HttpResponseMessage getResponse = await _httpClient.GetAsync($"/ingredients/{id}");
+        IngredientResponse? ingredient = await getResponse.Content.ReadFromJsonAsync<IngredientResponse>();
+        Assert.NotNull(ingredient);
+        Assert.Equal("Mercadona", ingredient.Brand);
     }
 
+    [Fact]
+    public async Task UpdateIngredient_NonExistingId_Returns404()
+    {
+        // Arrange
+        UpdateIngredientRequest request = new(
+            Name: "Chicken Breast",
+            Protein: 31,
+            Carbs: 0,
+            Fat: 3.6m,
+            Fiber: 0,
+            Salt: 0.07m,
+            Brand: "Mercadona");
+
+        // Act
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"/ingredients/{Guid.NewGuid()}", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    
     // Get
 
     [Fact]
@@ -119,7 +155,7 @@ public class IngredientIntregrationTests : IClassFixture<CustomWebApplicationFac
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    
+
 
     [Fact]
     public async Task GetIngredients_NoSearch_ReturnsAll ()
