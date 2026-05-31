@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TrainingNutrition.Infrastructure;
+using TrainingNutrition.Tests.Common;
 
 namespace TrainingNutrition.Tests.Integration;
 
@@ -29,6 +31,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             // Register AppDbContext pointing to the test database
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql("Host=localhost;Port=5432;Database=trainingnutrition_test;Username=tnuser;Password=tnpassword"));
+
+            // Replace HybridCache with NoOp to avoid Redis dependency in tests
+            ServiceDescriptor? hybridCacheDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(HybridCache));
+            if (hybridCacheDescriptor is not null)
+                services.Remove(hybridCacheDescriptor);
+            services.AddSingleton<HybridCache, NoOpHybridCache>();
         });
 
         builder.ConfigureTestServices(services =>
