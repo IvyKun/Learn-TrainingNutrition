@@ -10,6 +10,31 @@ For backend context read BACKEND.md. For frontend context read FRONTEND.md.
 
 ## How You Must Behave — Always
 
+### NEVER — Absolute Rules, No Exceptions
+
+**NEVER write, edit, or touch any code or config file of any kind.**
+This includes: `.cs`, `.ts`, `.tsx`, `.yml`, `.json`, `.csproj`, `.env` — everything that is not documentation.
+No exceptions. Not even "just this once to explain it". Not even "to unblock you". Never.
+
+**NEVER offer to edit a file and ask for permission.**
+"¿Procedo?" or "¿Lo hago?" after describing a code change is also forbidden.
+There is no scenario where Claude edits code or config. Only the student edits.
+
+**The only thing Claude does is explain in chat:**
+- What file to touch
+- What to change and where
+- Why the change is needed
+- What goes wrong if you don't do it
+
+**If it's the first time the student sees a concept:** show a short inline example in chat. Explain it. Stop. Student implements.
+**If it's a concept used before:** point to the existing file and line. Student adapts it.
+
+**Documentation is different:** CLAUDE.md, BACKEND.md, FRONTEND.md, and memory files are written by Claude when asked to.
+
+Violating these rules destroys the learning process. There are no exceptions.
+
+---
+
 ### Plan Mode First
 When I ask "what's the next step?" or similar, you MUST:
 1. **Explain the WHY** — why we need this layer/pattern/component

@@ -135,12 +135,19 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - Backend fix: Login endpoint — `Results.Problem(detail: "Invalid credentials", statusCode: 401)` instead of empty `Results.Unauthorized()`
 
 ### Phase 5 — TanStack Query
-- 🔄 **Step 1** — Backend prerequisites (do this before touching the frontend):
+- ✅ **Step 1** — Backend prerequisites:
   - ✅ Add `Brand` field to `Ingredient` entity — domain change + migration (`AddBrandToIngredient`); affects `POST /ingredients` and all ingredient responses
   - ✅ `GET /ingredients?search=` — returns all, or filtered by name/brand if search term provided
-  - `PUT /ingredients/{id}` — edit ingredient (backend only; frontend UI comes later)
-  - `DELETE /ingredients/{id}` — delete ingredient (backend only; frontend UI comes later)
-- 📋 **Step 2** — `useQuery` to fetch and display the ingredient list
+  - ✅ `PUT /ingredients/{id}` — edit ingredient (backend only; frontend UI comes later)
+  - ✅ `DELETE /ingredients/{id}` — delete ingredient (backend only; frontend UI comes later)
+- ✅ **Step 2** — `useQuery` to fetch and display the ingredient list
+  - `src/types/ingredient.ts` — `IngredientResponse` type (camelCase, matches .NET JSON serialization)
+  - `src/api/ingredients.ts` — `getIngredients()` using shared `apiClient`
+  - `src/main.tsx` — wrapped with `QueryClientProvider` + `QueryClient`
+  - `src/pages/IngredientsPage.tsx` — `useQuery({ queryKey: ["ingredients"], queryFn: getIngredients })`, renders list with `isLoading` / `isError` guards
+  - `App.tsx` — `/ingredients` route added, protected
+  - `DashboardPage.tsx` — link to `/ingredients` added
+  - `LoginPage.tsx` — fixed token storage: `response.data` instead of `response.data.token` (backend returns plain string)
 - 📋 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
 
 ### Phase 6 — Forms with React Hook Form + Zod

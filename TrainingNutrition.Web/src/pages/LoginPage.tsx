@@ -17,12 +17,12 @@ function LoginPage() {
     e.preventDefault();
 
     try {
-      const response = await apiClient.post<{ token: string }>("/auth/login", {
+      const response = await apiClient.post<string>("/auth/login", {
         email,
         password,
       });
 
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", response.data);
 
       navigate("/");
       
