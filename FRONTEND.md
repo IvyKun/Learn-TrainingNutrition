@@ -148,7 +148,10 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `App.tsx` — `/ingredients` route added, protected
   - `DashboardPage.tsx` — link to `/ingredients` added
   - `LoginPage.tsx` — fixed token storage: `response.data` instead of `response.data.token` (backend returns plain string)
-- 📋 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
+- 🔄 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
+  - `src/types/ingredient.ts` — `CreateIngredientRequest` + `UpdateIngredientRequest` types added
+  - `src/api/ingredients.ts` — `createIngredient`, `updateIngredient`, `deleteIngredient` functions added
+  - `src/pages/IngredientsPage.tsx` — table + create form + delete button (in progress)
 
 ### Phase 6 — Forms with React Hook Form + Zod
 - 📋 **Step 1** — Add Zod v4 schema validation to the create ingredient form

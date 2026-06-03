@@ -1,11 +1,32 @@
 import apiClient from "./client"
-import type { IngredientResponse } from "../types/ingredient"
+import type { IngredientResponse, CreateIngredientRequest, UpdateIngredientRequest } from "../types/ingredient"
 
 async function getIngredients() {
 
-    const response = await apiClient.get<IngredientResponse[]>("/ingredients", {});
+    const response = await apiClient.get<IngredientResponse[]>("/ingredients");
 
-      return response.data;
+    return response.data;
 }
 
 export default getIngredients
+
+export async function createIngredient(data: CreateIngredientRequest) {
+
+    const response = await apiClient.post<string>("/ingredients", data);
+
+    return response.data;
+}
+
+export async function updateIngredient(id: string, data: UpdateIngredientRequest) {
+
+    const response = await apiClient.put<string>(`/ingredients/${id}`, data);
+
+    return response.data;
+}
+
+export async function deleteIngredient(id: string) {
+
+    const response = await apiClient.delete<string>(`/ingredients/${id}`);
+
+    return response.data;
+}
