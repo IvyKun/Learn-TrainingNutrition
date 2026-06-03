@@ -1,14 +1,12 @@
-import apiClient from "./client"
-import type { IngredientResponse, CreateIngredientRequest, UpdateIngredientRequest } from "../types/ingredient"
+import apiClient from "@/api/client";
+import type { IngredientResponse, CreateIngredientRequest, UpdateIngredientRequest } from "@/types/ingredient"
 
-async function getIngredients() {
+export async function getIngredients() {
 
     const response = await apiClient.get<IngredientResponse[]>("/ingredients");
 
     return response.data;
 }
-
-export default getIngredients
 
 export async function createIngredient(data: CreateIngredientRequest) {
 

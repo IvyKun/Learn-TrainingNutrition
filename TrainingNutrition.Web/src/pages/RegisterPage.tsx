@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
 import apiClient from "@/api/client"
+import { isAxiosError } from "axios"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { isAxiosError } from "axios"
 
 function RegisterPage() {
 
