@@ -148,15 +148,18 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `App.tsx` — `/ingredients` route added, protected
   - `DashboardPage.tsx` — link to `/ingredients` added
   - `LoginPage.tsx` — fixed token storage: `response.data` instead of `response.data.token` (backend returns plain string)
-- 🔄 **Step 3** — `useMutation` to create an ingredient — loading states, error states, cache invalidation
+- ✅ **Step 3** — `useMutation` for create and delete; React Hook Form + Zod validation on create form
   - `src/types/ingredient.ts` — `CreateIngredientRequest` + `UpdateIngredientRequest` types added
   - `src/api/ingredients.ts` — `createIngredient`, `updateIngredient`, `deleteIngredient` functions added
-  - `src/pages/IngredientsPage.tsx` — table + create form + delete button (in progress)
+  - `src/pages/IngredientsPage.tsx` — table + `useMutation` delete (invalidateQueries) + create form with RHF+Zod (schema, per-field error messages, `form.reset()` on success); `disabled={isPending}` on both buttons
+  - `npm install react-hook-form zod @hookform/resolvers` — dependencies added
+  - Zod v4 API: `{ error: "..." }` replaces v3 `{ invalid_type_error: "..." }`; `z.coerce.number()` converts HTML string inputs to numbers before validation
+  - Macro order in form follows Spanish nutrition label order: Fat → Carbs → Protein → Fiber → Salt
 
 ### Phase 6 — Forms with React Hook Form + Zod
-- 📋 **Step 1** — Add Zod v4 schema validation to the create ingredient form
+- ✅ **Step 1** — Zod v4 schema + RHF on create ingredient form (done as part of Phase 5 Step 3)
 - 📋 **Step 2** — Apply React Hook Form + Zod to Register and Login forms
-- 📋 **Step 3** — Per-field error messages (mirrors backend FluentValidation)
+- 📋 **Step 3** — Per-field error messages on Register and Login (mirrors backend FluentValidation)
 
 ### Phase 7 — shadcn/ui
 - ✅ **Step 1** — Install and configure Tailwind v4 + shadcn/ui

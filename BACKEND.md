@@ -61,6 +61,7 @@ TrainingNutrition/
 
 ### ✅ Phase 0 — Domain
 Entities, Value Objects with validation in constructors. Unit tests for all domain types.
+- `Macronutrients.Calories` formula (EU standard — Reg. 1169/2011): `(Protein × 4) + (Carbs × 4) + (Fat × 9) + (Fiber × 2)` — fiber contributes 2 kcal/g in the European system, unlike the US system which excludes it.
 
 ### ✅ Phase 1 — EF Core Foundations
 Docker + PostgreSQL. AppDbContext. Fluent API entity configurations. Migrations. Basic CRUD.

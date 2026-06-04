@@ -12,7 +12,7 @@ public sealed record Macronutrients
     {
         get
         {
-            decimal raw = (Protein * 4m) + (Carbs * 4m) + (Fat * 9m);
+            decimal raw = (Protein * 4m) + (Carbs * 4m) + (Fat * 9m) + (Fiber * 2m);
             return (int)Math.Round(raw, MidpointRounding.AwayFromZero);
         }
     }
