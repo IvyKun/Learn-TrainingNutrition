@@ -155,6 +155,13 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `npm install react-hook-form zod @hookform/resolvers` — dependencies added
   - Zod v4 API: `{ error: "..." }` replaces v3 `{ invalid_type_error: "..." }`; `z.coerce.number()` converts HTML string inputs to numbers before validation
   - Macro order in form follows Spanish nutrition label order: Fat → Carbs → Protein → Fiber → Salt
+- ✅ **Step 4** — Edit ingredient — full CRUD complete on frontend
+  - `src/pages/IngredientsPage.tsx` — `useState<IngredientResponse | null>` for selection; `useEffect` to fill form on selection change; `updateMutation` with explicit `UpdateIngredientRequest` mapping; conditional `onSubmit` (create vs update); Edit button per row; Save/Cancel button area (Cancel only shown in edit mode)
+  - TypeScript 6 + @hookform/resolvers 5.x: do NOT use explicit `<T>` generic on `useForm` — inference from `zodResolver` works, explicit generic leaves `TFieldValues` unresolved
+  - `form.reset(values)` updates internal defaults by default — use `{ keepDefaultValues: true }` when loading edit values so `form.reset()` still resets to the original empty form
+  - `SubmitHandler<T>` imported from `react-hook-form` — define handler as `const onSubmit: SubmitHandler<T>` outside JSX for clean separation
+  - `step="0.01"` on number inputs — browser accepts 0, 1, or 2 decimal places
+  - `type="button"` required on Cancel — without it, any button inside a `<form>` triggers submit by default
 
 ### Phase 6 — Forms with React Hook Form + Zod
 - ✅ **Step 1** — Zod v4 schema + RHF on create ingredient form (done as part of Phase 5 Step 3)

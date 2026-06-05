@@ -1,15 +1,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { useState, useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { getIngredients, createIngredient, deleteIngredient } from "@/api/ingredients";
+import { getIngredients, createIngredient, updateIngredient, deleteIngredient } from "@/api/ingredients";
 import type { IngredientResponse, CreateIngredientRequest, UpdateIngredientRequest } from "@/types/ingredient"
 
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -34,7 +34,9 @@ function IngredientsPage() {
 
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateIngredientForm>({
+  const [selectedIngredient, setSelectedIngredient] = useState<IngredientResponse | null>(null);
+
+  const form = useForm({
     resolver: zodResolver(createIngredientSchema),
     defaultValues: {
       name: "",
@@ -46,6 +48,7 @@ function IngredientsPage() {
       salt: 0,
     },
   });
+  
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteIngredient(id),
@@ -61,6 +64,39 @@ function IngredientsPage() {
       form.reset();
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & CreateIngredientForm) =>
+      updateIngredient(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+      setSelectedIngredient(null);
+    },
+  });
+
+  const onSubmit: SubmitHandler<CreateIngredientForm> = (data) => {
+    if (selectedIngredient) {
+      updateMutation.mutate({ id: selectedIngredient.id, ...data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedIngredient) {
+      form.reset({
+        name: selectedIngredient.name,
+        brand: selectedIngredient.brand,
+        fat: selectedIngredient.fat,
+        carbs: selectedIngredient.carbs,
+        protein: selectedIngredient.protein,
+        fiber: selectedIngredient.fiber,
+        salt: selectedIngredient.salt,
+      }, { keepDefaultValues: true });
+    } else {
+      form.reset();
+    }
+  }, [selectedIngredient, form]);
 
 
   if (isLoading) return <p>Cargando...</p>;
@@ -99,16 +135,22 @@ function IngredientsPage() {
               <td>{ingredient.fat}</td>
               <td>{ingredient.fiber}</td>
               <td>{ingredient.salt}</td>
-              <td><Button type="button"
+              <td>
+                <Button type="button"
+                    onClick={() => setSelectedIngredient(ingredient)}
+                    disabled={deleteMutation.isPending}
+                >Edit</Button>
+                <Button type="button"
                           onClick={() => deleteMutation.mutate(ingredient.id)}
                           disabled={deleteMutation.isPending}
-                          >Delete</Button></td>
+                >Delete</Button>
+              </td>
             </tr>
           ))}
         </tbody>
         </table>
 
-        <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="p-8 flex flex-col gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="p-8 flex flex-col gap-4">
           <h2 className="font-semibold">Add Ingredient</h2>
           <div className="flex flex-col gap-1">
             <label htmlFor="name" className="text-sm font-medium">Name</label>
@@ -123,43 +165,57 @@ function IngredientsPage() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="fat" className="text-sm font-medium">Fat</label>
-            <Input type="number" id="fat" placeholder="Fat" {...form.register("fat")} />
+            <Input type="number" step="0.01" id="fat" placeholder="Fat" {...form.register("fat")} />
             {form.formState.errors.fat && (
               <p className="text-sm text-red-500">{form.formState.errors.fat.message}</p>
             )}
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="carbs" className="text-sm font-medium">Carbs</label>
-            <Input type="number" id="carbs" placeholder="Carbs" {...form.register("carbs")} />
+            <Input type="number" step="0.01" id="carbs" placeholder="Carbs" {...form.register("carbs")} />
             {form.formState.errors.carbs && (
               <p className="text-sm text-red-500">{form.formState.errors.carbs.message}</p>
             )}
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="protein" className="text-sm font-medium">Protein</label>
-            <Input type="number" id="protein" placeholder="Protein" {...form.register("protein")} />
+            <Input type="number" step="0.01" id="protein" placeholder="Protein" {...form.register("protein")} />
             {form.formState.errors.protein && (
               <p className="text-sm text-red-500">{form.formState.errors.protein.message}</p>
             )}
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="fiber" className="text-sm font-medium">Fiber</label>
-            <Input type="number" id="fiber" placeholder="Fiber" {...form.register("fiber")} />
+            <Input type="number" step="0.01" id="fiber" placeholder="Fiber" {...form.register("fiber")} />
             {form.formState.errors.fiber && (
               <p className="text-sm text-red-500">{form.formState.errors.fiber.message}</p>
             )}
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="salt" className="text-sm font-medium">Salt</label>
-            <Input type="number" id="salt" placeholder="Salt" {...form.register("salt")} />
+            <Input type="number" step="0.01" id="salt" placeholder="Salt" {...form.register("salt")} />
             {form.formState.errors.salt && (
               <p className="text-sm text-red-500">{form.formState.errors.salt.message}</p>
             )}
           </div>
 
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? "Saving..." : "Add Ingredient"}
-          </Button>
+          <div className="flex gap-2">
+            {!selectedIngredient && (
+              <Button type="submit" disabled={createMutation.isPending}>
+                Add Ingredient
+              </Button>
+            )}
+            {selectedIngredient && (
+              <>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  Save changes
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setSelectedIngredient(null)}>
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
         </form>
 
       </Card>
