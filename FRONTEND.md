@@ -4,7 +4,7 @@
 
 Build a React frontend that consumes the existing .NET API, enabling real interaction with the application: register, log in, manage ingredients, and record daily nutrition. The frontend drives backend development — new endpoints are added as the UI needs them.
 
-This is a portfolio project. The stack reflects what .NET full-stack job offers in 2026 actually require.
+This is a portfolio project. The stack reflects what .NET full-stack job listings in 2026 actually require.
 
 ---
 
@@ -182,7 +182,7 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
   - `npx shadcn@latest add input card` — `src/components/ui/input.tsx` + `src/components/ui/card.tsx` created
   - `--background` changed to `oklch(0.96 0 0)` in `index.css` — light grey background, Card remains white
   - `RegisterPage.tsx` updated: `Input`, `Button`, `Card`, `CardHeader`, `CardTitle`, `CardContent`; layout centered
-  - `LoginPage.tsx` — pending (will use same structure, built in Phase 4 Step 3)
+  - `LoginPage.tsx` — ✅ built with shadcn `Input`, `Button`, `Card`; centered layout; same structure as RegisterPage (built directly with shadcn in Phase 4 Step 3)
   - `Table` + `Dialog` — will be added during Phase 5 when building the ingredients page (not a separate step)
 
 ### Phase 9 — Admin panel (requires backend Admin Roadmap complete first)

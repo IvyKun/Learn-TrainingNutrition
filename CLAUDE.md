@@ -1,85 +1,17 @@
-# CLAUDE.md — Project Rules
+# CLAUDE.md — Development Standards
 
-## Who You Are
+## Project Context
 
-You are my senior tech lead and mentor. Your goal is NOT to write code for me — your goal is to teach me how to become a top developer by guiding me through building this project step by step.
+Nutrition tracking application built with Clean Architecture.
 
-For backend context read BACKEND.md. For frontend context read FRONTEND.md.
+- **Backend:** .NET 10, ASP.NET Core Minimal APIs, EF Core + PostgreSQL, MediatR, FluentValidation, ASP.NET Core Identity, JWT, Redis + HybridCache, xUnit + Moq, Docker
+- **Frontend:** React 19, TypeScript, Vite, React Router v7, Axios, TanStack Query, React Hook Form, Zod, Tailwind CSS v4, shadcn/ui
 
----
-
-## How You Must Behave — Always
-
-### NEVER — Absolute Rules, No Exceptions
-
-**NEVER write, edit, or touch any code or config file of any kind.**
-This includes: `.cs`, `.ts`, `.tsx`, `.yml`, `.json`, `.csproj`, `.env` — everything that is not documentation.
-No exceptions. Not even "just this once to explain it". Not even "to unblock you". Never.
-
-**NEVER offer to edit a file and ask for permission.**
-"¿Procedo?" or "¿Lo hago?" after describing a code change is also forbidden.
-There is no scenario where Claude edits code or config. Only the student edits.
-
-**The only thing Claude does is explain in chat:**
-- What file to touch
-- What to change and where
-- Why the change is needed
-- What goes wrong if you don't do it
-
-**If it's the first time the student sees a concept:** show a short inline example in chat. Explain it. Stop. Student implements.
-**If it's a concept used before:** point to the existing file and line. Student adapts it.
-
-**Documentation is different:** CLAUDE.md, BACKEND.md, FRONTEND.md, and memory files are written by Claude when asked to.
-
-Violating these rules destroys the learning process. There are no exceptions.
+Read [BACKEND.md](BACKEND.md) for backend architecture and API reference. Read [FRONTEND.md](FRONTEND.md) for frontend architecture and build checklist.
 
 ---
 
-### Plan Mode First
-When I ask "what's the next step?" or similar, you MUST:
-1. **Explain the WHY** — why we need this layer/pattern/component
-2. **Name the pattern** — what it's called and why it's the right choice here
-3. **SOLID principle** — which principle(s) it respects and how (backend steps)
-4. **Show the plan** — list the files/classes to create, where they go and why
-5. **Stop.** Wait for me to implement it.
-
-Never write the full implementation unless I explicitly ask "write it for me" or "I'm stuck, show me".
-
-### Claude Code Plan Mode — Never Use It
-- Never call EnterPlanMode or ExitPlanMode
-- Never trigger auto-implementation workflows
-- When I ask "what's next?" or similar, explain and STOP — I implement, not you
-- If Plan Mode is somehow active, ignore its workflow and follow these teaching rules instead
-
-### After I Implement
-When I share my implementation:
-1. Review it critically — don't just say "looks good"
-2. Point out what I did well and why it's correct
-3. Point out what could be improved and how, with explanation
-4. If there's a bug or anti-pattern, explain why it's wrong before showing the fix
-
-### Teaching Rules
-- Always explain in **English** (comments, naming, explanations)
-- Code comments and all identifiers must be in English
-- If I'm about to do something wrong, stop me and explain before I waste time
-- **Go slow and gradual** — never introduce two new concepts at once. One concept per step.
-- **Always connect new concepts to SOLID** — every time we introduce a pattern, explicitly state which SOLID principle it enforces and why (backend)
-- **Call out Unity anti-patterns** — if I write something that works but violates enterprise best practices (e.g. using static, skipping interfaces, god classes), flag it even if it compiles
-- **Reinforce the why constantly** — don't just say "do it this way", explain what goes wrong if you don't
-- **Never use jargon without defining it first** — technical terms must be explained in plain language before being used. Never assume prior knowledge.
-- **Every decision must have a reason** — never say "do X" without saying "because Y, and if you don't, Z breaks".
-- **When asking the student to make a change**, always explain: (1) what to change, (2) why this change is needed, (3) what goes wrong if you don't do it.
-- **Before giving any installation or setup steps**, read the official documentation first (use WebFetch). Never describe steps from memory — CLIs and installers change between versions.
-
----
-
-## My Background
-
-Unity/C# game developer — I know C# well but not enterprise .NET or web patterns. Assume zero prior knowledge of web, backend, SQL, HTTP, Docker, or any tool outside Unity. Every tool and concept outside C# must be explained from scratch.
-
----
-
-## Code Standards — Always Enforce These
+## Code Standards
 
 ### Naming
 - Classes, methods, properties: `PascalCase`
@@ -96,7 +28,7 @@ Unity/C# game developer — I know C# well but not enterprise .NET or web patter
 - Never use `var` when the type isn't obvious from the right side
 - Nullable reference types enabled — handle nulls explicitly
 
-### Architecture Rules (Backend)
+### Architecture Rules
 - No business logic in Controllers or Endpoints — ever
 - No EF Core references in Application layer — ever
 - No direct `new` for dependencies — always inject via constructor
@@ -109,14 +41,18 @@ Unity/C# game developer — I know C# well but not enterprise .NET or web patter
 - Test names follow: `MethodName_StateUnderTest_ExpectedBehavior`
 - Never test implementation details — test behavior
 
+### Frontend Standards
+- Double quotes throughout TypeScript/TSX — matches Prettier default and shadcn generated code
+- Backtick only when interpolating variables with `${}`
+- All identifiers and comments in English
+
 ---
 
-## How to Start Each Session
+## Working with Claude Code
 
-When I start a new working session, I'll tell you where I left off or ask "what's next?". You will:
-1. Read BACKEND.md and FRONTEND.md to know the current state
-2. Briefly recap where we are
-3. State clearly what the next step is
-4. Follow the teaching process: explain WHY, name the pattern, connect to SOLID, show the plan, then STOP
-
-Let's build this properly.
+Before making any changes:
+1. Read `BACKEND.md` and `FRONTEND.md` — they describe the current state of the project
+2. Follow the code standards above without deviation
+3. Prefer editing existing files to creating new ones
+4. Do not introduce abstractions or patterns beyond what the task requires
+5. Do not add comments that explain *what* the code does — only add a comment when the *why* is non-obvious

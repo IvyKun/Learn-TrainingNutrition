@@ -50,7 +50,7 @@ TrainingNutrition/
 │   ├── Exceptions/                       (GlobalExceptionHandler)
 │   ├── BearerSecuritySchemeTransformer
 │   └── Program.cs
-└── TrainingNutrition.Tests/              (90 passing — unit + integration)
+└── TrainingNutrition.Tests/              (94 passing — unit + integration)
     ├── Integration/                      (CustomWebApplicationFactory, 3 integration test classes)
     └── Application/                      (handler unit tests with Moq)
 ```
@@ -111,8 +111,8 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 - **Ingredient CRUD (Phase 5 backend prerequisite):**
   1. ✅ Add `Brand` field to `Ingredient` — domain change + migration (`AddBrandToIngredient`)
   2. ✅ `GET /ingredients?search=` — search by name or brand, returns all if no search term
-  3. ✅ `PUT /ingredients/{id}` — implementación completa + tests (integration en `IngredientIntregrationTests`, unit en `UpdateIngredientHandlerTests`)
-  4. ✅ `DELETE /ingredients/{id}` — Command + Handler (invalida caché) + endpoint + tests (integration en `IngredientIntregrationTests`, unit en `DeleteIngredientHandlerTests`)
+  3. ✅ `PUT /ingredients/{id}` — full implementation + tests (integration in `IngredientIntregrationTests`, unit in `UpdateIngredientHandlerTests`)
+  4. ✅ `DELETE /ingredients/{id}` — Command + Handler (invalidates cache) + endpoint + tests (integration in `IngredientIntregrationTests`, unit in `DeleteIngredientHandlerTests`)
 - Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md`
 - v0.1 nutrition endpoints 📋 — see `ROADMAP_v0.1.md`
 - Frontend driving which backend endpoints get built next — see `FRONTEND.md`
