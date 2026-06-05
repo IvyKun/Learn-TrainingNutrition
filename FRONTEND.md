@@ -165,8 +165,11 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 
 ### Phase 6 — Forms with React Hook Form + Zod
 - ✅ **Step 1** — Zod v4 schema + RHF on create ingredient form (done as part of Phase 5 Step 3)
-- 📋 **Step 2** — Apply React Hook Form + Zod to Register and Login forms
-- 📋 **Step 3** — Per-field error messages on Register and Login (mirrors backend FluentValidation)
+- ✅ **Step 2** — Apply React Hook Form + Zod to Register and Login forms
+  - `RegisterPage.tsx` — `useMutation` replaces manual try/catch; Zod schema (`z.email` + `z.string().min(8)`); `useForm` + `zodResolver`; `onSuccess` navigates to `/login`; `onError` handles server errors via `isAxiosError`
+  - `LoginPage.tsx` — same pattern; `onSuccess(response)` receives `AxiosResponse<string>`, stores `response.data` as token in `localStorage`, navigates to `/`
+- ✅ **Step 3** — Per-field error messages on Register and Login (mirrors backend FluentValidation)
+  - Both forms show per-field errors in `text-sm text-red-500` below each input; server errors shown in a separate `<p>` above the form
 
 ### Phase 7 — shadcn/ui
 - ✅ **Step 1** — Install and configure Tailwind v4 + shadcn/ui
