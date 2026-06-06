@@ -105,14 +105,3 @@ Dockerfile multi-stage build (sdk:10.0 → aspnet:10.0-alpine, non-root user). H
 
 ---
 
-## Next Steps
-
-- Backend Phases 0–6 ✅ complete
-- **Ingredient CRUD (Phase 5 backend prerequisite):**
-  1. ✅ Add `Brand` field to `Ingredient` — domain change + migration (`AddBrandToIngredient`)
-  2. ✅ `GET /ingredients?search=` — search by name or brand, returns all if no search term
-  3. ✅ `PUT /ingredients/{id}` — full implementation + tests (integration in `IngredientIntregrationTests`, unit in `UpdateIngredientHandlerTests`)
-  4. ✅ `DELETE /ingredients/{id}` — Command + Handler (invalidates cache) + endpoint + tests (integration in `IngredientIntregrationTests`, unit in `DeleteIngredientHandlerTests`)
-- Admin & Roles endpoints 📋 — see `ROADMAP_v0.1.md`
-- v0.1 nutrition endpoints 📋 — see `ROADMAP_v0.1.md`
-- Frontend driving which backend endpoints get built next — see `FRONTEND.md`
