@@ -513,7 +513,7 @@ repository. GitHub Actions is the CI platform built into GitHub.
 Our workflow (`.github/workflows/ci.yml`):
 1. Spins up a PostgreSQL service container — a real database, not a mock
 2. Sets the JWT secret as a GitHub secret (not hardcoded in the workflow file)
-3. Runs `dotnet test` — all 90 tests execute against real infrastructure
+3. Runs `dotnet test` — all 94 tests execute against real infrastructure
 
 ### What problem it solves
 Without CI, broken code can be merged without anyone noticing until someone runs the tests
@@ -575,7 +575,7 @@ using ES modules natively — no full bundle rebuild on every change.
 natural choice: you define interfaces and types, the compiler catches type errors before runtime.
 
 ### Why React for this project
-React is the dominant framework in .NET full-stack job offers. It pairs naturally with a REST
+React is the dominant framework in .NET full-stack job listings. It pairs naturally with a REST
 API backend. TypeScript makes it approachable for a C# developer: the mental model of typed
 objects, interfaces, and generics translates directly.
 
