@@ -1,14 +1,24 @@
-# TrainingNutrition API — Roadmap v0.1
+# TrainingNutrition — Roadmap
 
 ## Context
 
 The current version (v0.0) covers the foundational backend: authentication, ingredient management, and daily log creation. The application is functional but incomplete for real daily use — a user cannot yet register what they actually ate on a given day.
 
-This document lists the features required to make the API usable as a nutrition diary.
+This document lists the features planned for upcoming versions, in the order they will be built.
 
 ---
 
-## What v0.1 Adds
+## Execution Plan
+
+1. **v0.1 — Full nutrition diary** (below) — meals, dishes, full daily log response. The core feature that gives the app its purpose.
+2. **UI Polish** — replace the raw HTML table in `IngredientsPage` with shadcn `Table` / `Dialog`, applied consistently to the new Daily Log page built in step 1.
+3. **v0.2 — Health metrics** (below) — body weight, sleep, steps.
+4. **Checkpoint** — re-evaluate scope: additional core features, deployment timing (see [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md)), and Admin & Roles (below).
+5. **Future ideas backlog** (end of this document) — deferred until the steps above are complete.
+
+---
+
+## v0.1 — Full Nutrition Diary
 
 ### 1. List and Search Ingredients
 
@@ -134,7 +144,7 @@ The domain already computes all of these values (`GetTotalMacros()` exists on `D
 
 ---
 
-## Summary
+### Summary
 
 | # | Feature | Endpoint | Status |
 |---|---|---|---|
@@ -146,7 +156,7 @@ The domain already computes all of these values (`GetTotalMacros()` exists on `D
 
 ---
 
-## User Flow Enabled by v0.1
+### User Flow Enabled by v0.1
 
 ```
 Morning routine:
@@ -163,19 +173,17 @@ This covers the complete daily nutrition tracking loop.
 
 ---
 
----
+## v0.2 — Health Metrics
 
-# TrainingNutrition API — Roadmap v0.2
-
-## Context
+### Context
 
 With v0.1 the user can log what they eat each day. v0.2 adds three optional health metrics to the daily log: body weight, sleep duration, and step count. These are independent from nutrition — each is updated via its own dedicated endpoint so the user can record them at any point during the day without touching the food data.
 
 ---
 
-## What v0.2 Adds
+### What v0.2 Adds
 
-### 1. Log Body Weight
+#### 1. Log Body Weight
 
 **Why it's needed:** Weight tracking alongside nutrition is one of the most common use cases in any health diary. It is optional — not every day needs a weight entry.
 
@@ -194,7 +202,7 @@ Calling it again on the same day overwrites the previous value.
 
 ---
 
-### 2. Log Sleep
+#### 2. Log Sleep
 
 **Why it's needed:** Sleep quality directly affects recovery and appetite. Recording it in the same daily log makes it easy to spot correlations over time.
 
@@ -211,7 +219,7 @@ Calling it again on the same day overwrites the previous value.
 
 ---
 
-### 3. Log Steps
+#### 3. Log Steps
 
 **Why it's needed:** Daily activity (steps) is the simplest proxy for energy expenditure. Optional — rest days will simply have no entry.
 
@@ -228,7 +236,7 @@ Calling it again on the same day overwrites the previous value.
 
 ---
 
-## Impact on Daily Log Response
+### Impact on Daily Log Response
 
 The three fields are added as nullable values to the full log response from v0.1. If the user has not recorded a value for a given day, the field is `null`.
 
@@ -245,7 +253,7 @@ The three fields are added as nullable values to the full log response from v0.1
 
 ---
 
-## Summary
+### Summary
 
 | # | Feature | Endpoint | Notes |
 |---|---|---|---|
@@ -256,25 +264,23 @@ The three fields are added as nullable values to the full log response from v0.1
 
 ---
 
----
+## Admin & Roles
 
-# TrainingNutrition API — Admin & Roles
-
-## Context
+### Context
 
 During frontend development, the need to inspect and delete test users became evident. This also provides the natural opportunity to introduce role-based authorization: some endpoints are only accessible to users with the `Admin` role.
 
 ---
 
-## What This Adds
+### What This Adds
 
-### 1. Roles
+#### 1. Roles
 
 Introduce two roles: `Admin` and `User`. All existing registered users are `User` by default. One admin user is seeded at startup for development use.
 
 ---
 
-### 2. List All Users
+#### 2. List All Users
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -290,7 +296,7 @@ Introduce two roles: `Admin` and `User`. All existing registered users are `User
 
 ---
 
-### 3. Delete a User
+#### 3. Delete a User
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -300,10 +306,26 @@ Introduce two roles: `Admin` and `User`. All existing registered users are `User
 
 ---
 
-## Summary
+### Summary
 
 | # | Feature | Endpoint | Status |
 |---|---|---|---|
 | 1 | Role setup (Admin / User) + seed admin | — | 📋 Missing |
 | 2 | List users | `GET /admin/users` | 📋 Missing |
 | 3 | Delete user | `DELETE /admin/users/{id}` | 📋 Missing |
+
+---
+
+## Future Ideas Backlog
+
+Deferred until the Checkpoint in the Execution Plan above — the priority is finishing the core nutrition diary (v0.1), UI polish, and health metrics (v0.2) before adding new feature areas.
+
+| Idea | Description |
+|---|---|
+| Dashboard with charts | Visualize daily/weekly macro and calorie trends from daily log data (e.g. Recharts) |
+| Dark mode | Tailwind v4 + shadcn theme toggle |
+| Pagination on `/ingredients` | Avoid returning the full ingredient list as it grows |
+| Refresh tokens | Replace single short-lived JWT with access + refresh token flow |
+| E2E tests | Playwright tests covering the main user flows, alongside existing unit/integration tests |
+| External food database integration | Look up ingredients by name/barcode via OpenFoodFacts to auto-fill macros |
+| Rate limiting on `/auth` | Throttle register/login requests using ASP.NET Core's built-in rate limiting middleware |

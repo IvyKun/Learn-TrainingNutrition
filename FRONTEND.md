@@ -157,7 +157,7 @@ Steps in order. Steps within each phase restart at 1. Do not skip ahead.
 
 ## Connection with Backend Roadmap
 
-The backend ROADMAP_v0.1.md defines the endpoints needed. The frontend drives which ones get built first:
+The backend ROADMAP.md defines the endpoints needed. The frontend drives which ones get built first:
 
 | Frontend feature | Backend endpoint needed |
 |---|---|
