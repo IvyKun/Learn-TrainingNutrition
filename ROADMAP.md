@@ -10,7 +10,7 @@ This document lists the features planned for upcoming versions, in the order the
 
 ## Execution Plan
 
-1. **v0.1 — Full nutrition diary** (below) — meals, dishes, full daily log response. The core feature that gives the app its purpose.
+1. **v0.1 — Full nutrition diary** (below) — meal slots, ingredient entries, full daily log response. The core feature that gives the app its purpose.
 2. **UI Polish** — replace the raw HTML table in `IngredientsPage` with shadcn `Table` / `Dialog`, applied consistently to the new Daily Log page built in step 1.
 3. **v0.2 — Health metrics** (below) — body weight, sleep, steps.
 4. **Checkpoint** — re-evaluate scope: additional core features, deployment timing (see [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md)), and Admin & Roles (below).
@@ -19,6 +19,42 @@ This document lists the features planned for upcoming versions, in the order the
 ---
 
 ## v0.1 — Full Nutrition Diary
+
+### Domain Model — Daily Log Structure
+
+**Decision:** A `DailyLog` is a categorized list of ingredients for one day. It always contains
+exactly 7 `Meal` entries — one per `MealType` value — created automatically when the daily log
+is created. The user never creates or deletes meals; they only add ingredients to the slot that
+matches what they ate.
+
+```
+DailyLog (date, userId)
+  └─ Meal × 7 (one per MealType, always present)
+       └─ IngredientEntry[] (ingredient + grams)
+```
+
+**`MealType`** (chronological order — defines the daily template):
+
+1. `PreBreakfastSnack`
+2. `Breakfast`
+3. `MorningSnack`
+4. `Lunch`
+5. `AfternoonSnack`
+6. `Dinner`
+7. `NightSnack`
+
+A `Meal` has no `name` and no `occurredAt`. `MealType` is the only categorization a meal needs —
+the date already lives on `DailyLog`, and there is no value in timestamping when an ingredient
+was logged.
+
+**`Dish` does not exist.** Ingredients are added directly to a `Meal`. An earlier draft of this
+roadmap included a `Dish` layer between `Meal` and `IngredientEntry` — a named group of
+ingredients (e.g. "Oatmeal"). It was removed: `MealType` already provides the categorization the
+user needs, and `Dish` served no other purpose in v0.1. The "named group of ingredients" idea
+resurfaces later as **saved meal templates** (see Future Ideas Backlog) — a separate, reusable
+concept not tied to a specific day or meal slot.
+
+---
 
 ### 1. List and Search Ingredients
 
@@ -41,41 +77,17 @@ The search parameter is optional. If omitted, the full list is returned.
 
 ---
 
-### 2. Add a Meal to a Daily Log
+### 2. Add Ingredients to a Meal
 
-**Why it's needed:** A daily log is a container. Right now it can be created but nothing can be added to it. This endpoint lets the user say "I had Breakfast today".
+**Why it's needed:** Every daily log already has its 7 meal slots (see Domain Model above). This is the core action of the diary — telling the app what was eaten, and in which slot.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/dailylogs/{date}/meals` | Adds a meal to the daily log for that date |
+| `POST` | `/dailylogs/{date}/meals/{mealId}/ingredients` | Adds one or more ingredient entries to an existing meal |
 
 **Request body:**
 ```json
 {
-  "name": "Breakfast",
-  "type": "Breakfast",
-  "occurredAt": "2026-05-17T08:30:00Z"
-}
-```
-
-**`type` valid values:** `Breakfast`, `Lunch`, `Dinner`, `Snack`
-
-**Response:** `201 Created` with the new meal ID.
-
----
-
-### 3. Add a Dish to a Meal (with ingredients)
-
-**Why it's needed:** A meal is composed of dishes. A dish is a named group of ingredients with their quantities in grams. For example, a Breakfast meal could contain one dish called "Oatmeal" with 80g of oats and 200ml of milk.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/dailylogs/{date}/meals/{mealId}/dishes` | Adds a dish (with ingredients) to a meal |
-
-**Request body:**
-```json
-{
-  "name": "Oatmeal",
   "entries": [
     { "ingredientId": "...", "grams": 80 },
     { "ingredientId": "...", "grams": 200 }
@@ -83,13 +95,15 @@ The search parameter is optional. If omitted, the full list is returned.
 }
 ```
 
-**Response:** `201 Created` with the new dish ID.
+**Response:** `204 No Content`
+
+`mealId` is the id of one of the 7 meals already present on the daily log — obtained via `GET /dailylogs/{date}`.
 
 ---
 
-### 4. Get Daily Log — Full Response
+### 3. Get Daily Log — Full Response
 
-**Why it's needed:** The current `GET /dailylogs/{date}` response only returns `date` and `totalCalories`. To be useful as a diary, it needs to show the complete breakdown: meals → dishes → ingredients with quantities and calories.
+**Why it's needed:** The current `GET /dailylogs/{date}` response only returns `date` and `totalCalories`. To be useful as a diary, it needs to show the complete breakdown: 7 meal slots, each with its ingredient entries, macros and calories — plus the totals for the whole day.
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -106,41 +120,48 @@ The search parameter is optional. If omitted, the full list is returned.
   "meals": [
     {
       "id": "...",
-      "name": "Breakfast",
+      "type": "PreBreakfastSnack",
+      "totalCalories": 0,
+      "entries": []
+    },
+    {
+      "id": "...",
       "type": "Breakfast",
-      "occurredAt": "2026-05-17T08:30:00Z",
       "totalCalories": 520,
-      "dishes": [
+      "entries": [
         {
           "id": "...",
-          "name": "Oatmeal",
-          "totalCalories": 520,
-          "entries": [
-            {
-              "ingredientName": "Oats",
-              "grams": 80,
-              "calories": 303,
-              "protein": 13.2,
-              "carbs": 54.8,
-              "fat": 5.6
-            },
-            {
-              "ingredientName": "Milk",
-              "grams": 200,
-              "calories": 217,
-              "protein": 7.0,
-              "carbs": 10.2,
-              "fat": 8.0
-            }
-          ]
+          "ingredientName": "Oats",
+          "grams": 80,
+          "calories": 303,
+          "protein": 13.2,
+          "carbs": 54.8,
+          "fat": 5.6
+        },
+        {
+          "id": "...",
+          "ingredientName": "Milk",
+          "grams": 200,
+          "calories": 217,
+          "protein": 7.0,
+          "carbs": 10.2,
+          "fat": 8.0
         }
       ]
+    },
+    {
+      "id": "...",
+      "type": "MorningSnack",
+      "totalCalories": 0,
+      "entries": []
     }
   ]
 }
 ```
 
-The domain already computes all of these values (`GetTotalMacros()` exists on `DailyLog`, `Meal`, and `Dish`). Only the handler mapping and the response DTO need to be built.
+All 7 meals are always present, even when empty (`entries: []`, `totalCalories: 0`) — `Lunch`, `AfternoonSnack`, `Dinner` and `NightSnack` are omitted from the example above for brevity, but follow the same shape as `PreBreakfastSnack`.
+
+The domain already computes all of these values (`GetTotalMacros()` exists on `DailyLog` and `Meal`). Only the handler mapping and the response DTO need to be built.
 
 ---
 
@@ -150,9 +171,8 @@ The domain already computes all of these values (`GetTotalMacros()` exists on `D
 |---|---|---|---|
 | 1 | List ingredients | `GET /ingredients` | Missing |
 | 2 | Search ingredients by name | `GET /ingredients?search=text` | Missing |
-| 3 | Add meal to daily log | `POST /dailylogs/{date}/meals` | Missing |
-| 4 | Add dish to meal | `POST /dailylogs/{date}/meals/{mealId}/dishes` | Missing |
-| 5 | Daily log full response | `GET /dailylogs/{date}` (extended) | Partial — response too thin |
+| 3 | Add ingredients to a meal | `POST /dailylogs/{date}/meals/{mealId}/ingredients` | Missing |
+| 4 | Daily log full response | `GET /dailylogs/{date}` (extended) | Partial — response too thin |
 
 ---
 
@@ -163,10 +183,11 @@ Morning routine:
 
 1. Search existing ingredients          GET /ingredients?search=oat
 2. Create missing ingredient if needed  POST /ingredients
-3. Open today's log                     GET /dailylogs/2026-05-17
-4. Add a Breakfast meal                 POST /dailylogs/2026-05-17/meals
-5. Add a dish with ingredients          POST /dailylogs/2026-05-17/meals/{id}/dishes
-6. Review the full day                  GET /dailylogs/2026-05-17  ← now returns full breakdown
+3. Open today's log (auto-created       GET /dailylogs/2026-05-17
+   with its 7 empty meal slots)
+4. Add ingredients to the Breakfast slot
+                                         POST /dailylogs/2026-05-17/meals/{breakfastMealId}/ingredients
+5. Review the full day                  GET /dailylogs/2026-05-17  ← now returns full breakdown
 ```
 
 This covers the complete daily nutrition tracking loop.
@@ -322,6 +343,7 @@ Deferred until the Checkpoint in the Execution Plan above — the priority is fi
 
 | Idea | Description |
 |---|---|
+| Saved meal templates / recipes | Let users save a named set of ingredients (e.g. "Oatmeal") and re-apply it to any meal slot on any day, instead of re-entering the same ingredients every time |
 | Dashboard with charts | Visualize daily/weekly macro and calorie trends from daily log data (e.g. Recharts) |
 | Dark mode | Tailwind v4 + shadcn theme toggle |
 | Pagination on `/ingredients` | Avoid returning the full ingredient list as it grows |
