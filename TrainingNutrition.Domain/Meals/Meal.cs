@@ -1,5 +1,5 @@
 using TrainingNutrition.Domain.Common;
-using TrainingNutrition.Domain.Dishes;
+using TrainingNutrition.Domain.Ingredients;
 
 namespace TrainingNutrition.Domain.Meals;
 
@@ -8,50 +8,32 @@ public sealed class Meal
 {
     public Guid Id { get; private init; } = Guid.NewGuid();
 
-    private readonly List<Dish> _dishes = new();
 
     public MealType Type { get; private set; }
-    public string Name { get; private set; }
-    public DateTimeOffset OccurredAt { get; private set; }
 
-    public IReadOnlyList<Dish> Dishes => _dishes;
+    private readonly List<IngredientEntry> _ingredientEntries = new();
 
-    public Meal(MealType type, string name, DateTimeOffset occurredAt)
-    {
-        Type = type;
-        Name = ValidateName(name);
-        OccurredAt = occurredAt;
-    }
+    public IReadOnlyList<IngredientEntry> IngredientEntries => _ingredientEntries;
 
-    public void Rename(string name)
-    {
-        Name = ValidateName(name);
-    }
-
-    public void ChangeType(MealType type)
+    public Meal(MealType type)
     {
         Type = type;
     }
 
-    public void ChangeOccurredAt(DateTimeOffset occurredAt)
+    public void AddIngredient(IngredientEntry entry)
     {
-        OccurredAt = occurredAt;
+        if (entry is null)
+            throw new ArgumentNullException(nameof(entry));
+
+        _ingredientEntries.Add(entry);
     }
 
-    public void AddDish(Dish dish)
+    public int RemoveIngredient(Ingredient ingredient)
     {
-        if (dish is null)
-            throw new ArgumentNullException(nameof(dish));
+        if (ingredient is null)
+            throw new ArgumentNullException(nameof(ingredient));
 
-        _dishes.Add(dish);
-    }
-
-    public int RemoveDish(Dish dish)
-    {
-        if (dish is null)
-            throw new ArgumentNullException(nameof(dish));
-
-        return _dishes.RemoveAll(d => ReferenceEquals(d, dish));
+        return _ingredientEntries.RemoveAll(e => Equals(e.Ingredient, ingredient));
     }
 
     public Macronutrients GetTotalMacros()
@@ -59,12 +41,12 @@ public sealed class Meal
         decimal protein = 0m;
         decimal carbs = 0m;
         decimal fat = 0m;
-         decimal fiber = 0m;
+        decimal fiber = 0m;
         decimal salt = 0m;
 
-        foreach (var dish in _dishes)
+        foreach (var entry in _ingredientEntries)
         {
-            var macros = dish.GetTotalMacros();
+            var macros = entry.Macros;
             protein += macros.Protein;
             carbs += macros.Carbs;
             fat += macros.Fat;
@@ -77,16 +59,5 @@ public sealed class Meal
 
     public int GetTotalCalories() => GetTotalMacros().Calories;
 
-    private static string ValidateName(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Meal name cannot be empty.", nameof(name));
 
-        name = name.Trim();
-
-        if (name.Length > 100)
-            throw new ArgumentException("Meal name cannot be longer than 100 characters.", nameof(name));
-
-        return name;
-    }
 }
