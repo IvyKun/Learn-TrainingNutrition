@@ -1,5 +1,4 @@
 using TrainingNutrition.Domain.Common;
-using TrainingNutrition.Domain.Dishes;
 using TrainingNutrition.Domain.Ingredients;
 using TrainingNutrition.Domain.Meals;
 
@@ -7,119 +6,100 @@ namespace TrainingNutrition.Tests.Meals;
 
 public sealed class MealTests
 {
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Constructor_ShouldThrow_WhenNameIsInvalid(string name)
-    {
-        var act = () => new Meal(MealType.Meal, name, DateTimeOffset.UtcNow);
-
-        Assert.Throws<ArgumentException>(act);
-    }
-
+    
     [Fact]
-    public void Constructor_ShouldTrimName()
+    public void AddIngredientEntry_ShouldThrow_WhenEntryIsNull()
     {
-        var meal = new Meal(MealType.Meal, "  Breakfast  ", DateTimeOffset.UtcNow);
+        var meal = new Meal(MealType.Breakfast);
 
-        Assert.Equal("Breakfast", meal.Name);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Rename_ShouldThrow_WhenNameIsInvalid(string name)
-    {
-        var meal = new Meal(MealType.Meal, "Breakfast", DateTimeOffset.UtcNow);
-
-        var act = () => meal.Rename(name);
-
-        Assert.Throws<ArgumentException>(act);
-    }
-
-    [Fact]
-    public void AddDish_ShouldThrow_WhenDishIsNull()
-    {
-        var meal = new Meal(MealType.Meal, "Breakfast", DateTimeOffset.UtcNow);
-
-        var act = () => meal.AddDish(null!);
+        var act = () => meal.AddIngredientEntry(null!);
 
         Assert.Throws<ArgumentNullException>(act);
     }
 
     [Fact]
-    public void Meal_ShouldAllowDuplicateDishInstances()
+    public void Meal_ShouldAllowDuplicateIngredientEntryInstances()
     {
-        var meal = new Meal(MealType.Meal, "Breakfast", DateTimeOffset.UtcNow);
+        var meal = new Meal(MealType.Breakfast);
 
-        var dish = CreateSimpleDish("Porridge", protein: 10m, carbs: 20m, fat: 5m, grams: 100);
+        var ingredientEntry = CreateSimpleIngredientEntry("IngredientEntry", protein: 10m, carbs: 20m, fat: 5m, grams: 100);
 
-        meal.AddDish(dish);
-        meal.AddDish(dish);
-
-        Assert.Equal(2, meal.Dishes.Count);
-        Assert.Same(dish, meal.Dishes[0]);
-        Assert.Same(dish, meal.Dishes[1]);
+        meal.AddIngredientEntry(ingredientEntry);
+        meal.AddIngredientEntry(ingredientEntry);
+ 
+        Assert.Equal(2, meal.IngredientEntries.Count);
+        Assert.Same(ingredientEntry, meal.IngredientEntries[0]);
+        Assert.Same(ingredientEntry, meal.IngredientEntries[1]);
     }
 
     [Fact]
-    public void RemoveDish_ShouldRemoveOnlyMatchingReference_AndReturnCountRemoved()
+    public void RemoveIngredientEntry_ShouldRemoveOnlyMatchingReference_AndReturnTrue()
     {
-        var meal = new Meal(MealType.Meal, "Breakfast", DateTimeOffset.UtcNow);
+        var meal = new Meal(MealType.Breakfast);
 
-        var dishA = CreateSimpleDish("Dish A", protein: 10m, carbs: 0m, fat: 0m, grams: 100);
-        var dishB = CreateSimpleDish("Dish B", protein: 0m, carbs: 10m, fat: 0m, grams: 100);
+        var ingredientEntryA = CreateSimpleIngredientEntry("IngredientEntry A", protein: 10m, carbs: 20m, fat: 5m, grams: 100);
+        var ingredientEntryA2 = CreateSimpleIngredientEntry("IngredientEntry A2", protein: 10m, carbs: 20m, fat: 5m, grams: 100);
+        var ingredientEntryB = CreateSimpleIngredientEntry("IngredientEntry B", protein: 0m, carbs: 10m, fat: 0m, grams: 100);
 
-        meal.AddDish(dishA);
-        meal.AddDish(dishA); // same reference twice
-        meal.AddDish(dishB);
+        meal.AddIngredientEntry(ingredientEntryA);
+        meal.AddIngredientEntry(ingredientEntryA2);
+        meal.AddIngredientEntry(ingredientEntryB);
 
-        var removed = meal.RemoveDish(dishA);
+        var removed = meal.RemoveIngredientEntry(ingredientEntryA2.Id);
 
-        Assert.Equal(2, removed);
-        Assert.Single(meal.Dishes);
-        Assert.Same(dishB, meal.Dishes[0]);
+        Assert.True(removed);
+        Assert.Equal(2, meal.IngredientEntries.Count);
+        Assert.DoesNotContain(ingredientEntryA2, meal.IngredientEntries);
+        Assert.Contains(ingredientEntryA, meal.IngredientEntries);
+        Assert.Contains(ingredientEntryB, meal.IngredientEntries);
     }
 
     [Fact]
-    public void GetTotalMacros_ShouldSumDishMacros()
+    public void RemoveIngredientEntry_ShouldReturnFalseIfNotFound()
     {
-        var meal = new Meal(MealType.Meal, "Lunch", DateTimeOffset.UtcNow);
+        var meal = new Meal(MealType.Breakfast);
 
-        var dish1 = CreateSimpleDish("Dish 1", protein: 10m, carbs: 20m, fat: 5m, grams: 100); // 165 kcal
-        var dish2 = CreateSimpleDish("Dish 2", protein: 5m, carbs: 0m, fat: 10m, grams: 100);  // 110 kcal
+        var removed = meal.RemoveIngredientEntry(Guid.NewGuid());
 
-        meal.AddDish(dish1);
-        meal.AddDish(dish2);
+        Assert.False(removed);
+    }
+
+    [Fact]
+    public void GetTotalMacros_ShouldSumIngredientEntryMacros()
+    {
+        var meal = new Meal(MealType.Breakfast);
+
+        var ingredientEntryA = CreateSimpleIngredientEntry("IngredientEntry A", protein: 10m, carbs: 20m, fat: 5m, grams: 100); // 165 kcal
+        var ingredientEntryB = CreateSimpleIngredientEntry("IngredientEntry B", protein: 0m, carbs: 10m, fat: 0m, grams: 100); // 40 kcal
+
+        meal.AddIngredientEntry(ingredientEntryA);
+        meal.AddIngredientEntry(ingredientEntryB);
 
         var total = meal.GetTotalMacros();
 
-        Assert.Equal(new Macronutrients(15m, 20m, 15m, 0m, 0m), total);
+        Assert.Equal(new Macronutrients(10m, 30m, 5m, 0m, 0m), total);
     }
 
     [Fact]
     public void GetTotalCalories_ShouldUseMacrosCaloriesRounding()
     {
-        var meal = new Meal(MealType.Meal, "Lunch", DateTimeOffset.UtcNow);
+        var meal = new Meal(MealType.Breakfast);
 
-        // Make a dish that results in 82.5 kcal so we can confirm AwayFromZero -> 83
+        // Make an ingredient entry that results in 82.5 kcal so we can confirm AwayFromZero -> 83
         // Per 100g: 10P / 20C / 5F, with 50g => 5P / 10C / 2.5F => 82.5 -> 83
-        var ingredient = new Ingredient("Test", new Macronutrients(10m, 20m, 5m, 0m, 0m));
-        var dish = new Dish("Test dish");
-        dish.AddIngredient(new IngredientEntry(ingredient, new Grams(50)));
+        var ingredientEntry = CreateSimpleIngredientEntry("IngredientEntry", protein: 10m, carbs: 20m, fat: 5m, grams: 50);
 
-        meal.AddDish(dish);
+        meal.AddIngredientEntry(ingredientEntry);
 
         Assert.Equal(83, meal.GetTotalCalories());
     }
 
-    private static Dish CreateSimpleDish(string name, decimal protein, decimal carbs, decimal fat, int grams)
+    private static IngredientEntry CreateSimpleIngredientEntry(string name, decimal protein, decimal carbs, decimal fat, int grams)
     {
-        var ingredient = new Ingredient("Ingredient", new Macronutrients(protein, carbs, fat, 0m, 0m));
-        var dish = new Dish(name);
+        var ingredient = new Ingredient(name, new Macronutrients(protein, carbs, fat, 0m, 0m));
+        var ingredientEntry = new IngredientEntry(ingredient, new Grams(grams));
 
-        dish.AddIngredient(new IngredientEntry(ingredient, new Grams(grams)));
-
-        return dish;
+        return ingredientEntry;
     }
+
 }

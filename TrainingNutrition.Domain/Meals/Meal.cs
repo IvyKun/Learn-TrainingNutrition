@@ -20,7 +20,7 @@ public sealed class Meal
         Type = type;
     }
 
-    public void AddIngredient(IngredientEntry entry)
+    public void AddIngredientEntry(IngredientEntry entry)
     {
         if (entry is null)
             throw new ArgumentNullException(nameof(entry));
@@ -28,12 +28,15 @@ public sealed class Meal
         _ingredientEntries.Add(entry);
     }
 
-    public int RemoveIngredient(Ingredient ingredient)
+    public bool RemoveIngredientEntry(Guid entryId)
     {
-        if (ingredient is null)
-            throw new ArgumentNullException(nameof(ingredient));
+        var entry = _ingredientEntries.FirstOrDefault(e => e.Id == entryId);
 
-        return _ingredientEntries.RemoveAll(e => Equals(e.Ingredient, ingredient));
+        if (entry is null)
+            return false;
+
+        _ingredientEntries.Remove(entry);
+        return true;
     }
 
     public Macronutrients GetTotalMacros()

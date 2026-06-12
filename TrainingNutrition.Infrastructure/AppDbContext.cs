@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using TrainingNutrition.Domain.Dishes;
 using TrainingNutrition.Domain.Ingredients;
 using TrainingNutrition.Domain.Meals;
 using TrainingNutrition.Domain.Tracking;
@@ -12,7 +11,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
 {
     public DbSet<Ingredient> Ingredients { get; set; }
     public DbSet<User> Users { get; set; }
-    public DbSet<Dish> Dishes { get; set; }
+
     public DbSet<IngredientEntry> IngredientEntries { get; set; }
     public DbSet<Meal> Meals { get; set; }
     public DbSet<DailyLog> DailyLogs { get; set; }

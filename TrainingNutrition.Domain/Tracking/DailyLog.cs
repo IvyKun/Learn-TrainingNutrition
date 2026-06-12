@@ -20,26 +20,11 @@ public sealed class DailyLog
     {
         UserId = userId;
         Date = date;
-    }
 
-    public void AddMeal(Meal meal)
-    {
-        if(meal is null)
+        foreach (MealType type in Enum.GetValues<MealType>())
         {
-            throw new ArgumentNullException(nameof(meal));
+            _meals.Add(new Meal(type));
         }
-        
-        _meals.Add(meal);
-    }
-    
-    public int RemoveMeal(Meal meal)
-    {
-        if(meal is null)
-        {
-            throw new ArgumentNullException(nameof(meal));
-        }
-
-        return _meals.RemoveAll(m => ReferenceEquals(m, meal));
     }
 
     public Macronutrients GetTotalMacros()

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using TrainingNutrition.Domain.Dishes;
 using TrainingNutrition.Domain.Ingredients;
 
 namespace TrainingNutrition.Infrastructure.Configurations;

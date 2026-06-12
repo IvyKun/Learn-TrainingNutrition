@@ -11,19 +11,12 @@ public class MealConfiguration : IEntityTypeConfiguration<Meal>
          // Primary key
         builder.HasKey(x => x.Id);
 
-        // Name column: required, max length from domain validation, unique
-        builder.Property(x => x.Name)
-            .IsRequired()
-            .HasMaxLength(100);
-
         builder.Property(x => x.Type)
             .HasConversion<string>()
             .IsRequired();
 
-        builder.Property(x => x.OccurredAt);
-
-       // Relationship: a Meal has many Dish
-        builder.HasMany(x => x.Dishes)
+       // Relationship: a Meal has many IngredientEntries
+        builder.HasMany(x => x.IngredientEntries)
             .WithOne()
             .HasForeignKey("MealId")
             .IsRequired();

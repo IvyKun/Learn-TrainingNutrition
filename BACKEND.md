@@ -26,7 +26,6 @@ TrainingNutrition/
 ├── .github/workflows/ci.yml             ✅ GitHub Actions CI
 ├── TrainingNutrition.Domain/
 │   ├── Common/       (Email, Grams, Macronutrients, NotFoundException)
-│   ├── Dishes/       (Dish)
 │   ├── Ingredients/  (Ingredient, IngredientEntry)
 │   ├── Meals/        (Meal, MealType)
 │   ├── Tracking/     (DailyLog)
@@ -35,9 +34,9 @@ TrainingNutrition/
 │   ├── AppDbContext.cs                   (IdentityDbContext<AppUser>)
 │   ├── AppUser.cs                        (AppUser : IdentityUser)
 │   ├── Identity/                         (IdentityService, JwtSettings)
-│   ├── Migrations/                       (InitialCreate ✅, AddIdentity ✅)
+│   ├── Migrations/                       (InitialCreate ✅, AddIdentity ✅, AddBrandToIngredient ✅, RemodelMealsAndRemoveDish ✅)
 │   ├── Repositories/                     (EfIngredientRepository, EfDailyLogRepository)
-│   └── Configurations/                   (Fluent API for all 6 entities)
+│   └── Configurations/                   (Fluent API for all 5 entities)
 ├── TrainingNutrition.Application/
 │   ├── Abstractions/                     (IIngredientRepository, IDailyLogRepository, IIdentityService)
 │   ├── Behaviors/                        (ValidationBehavior, LoggingBehavior)
@@ -50,7 +49,7 @@ TrainingNutrition/
 │   ├── Exceptions/                       (GlobalExceptionHandler)
 │   ├── BearerSecuritySchemeTransformer
 │   └── Program.cs
-└── TrainingNutrition.Tests/              (94 passing — unit + integration)
+└── TrainingNutrition.Tests/              (85 passing — unit + integration)
     ├── Integration/                      (CustomWebApplicationFactory, 3 integration test classes)
     └── Application/                      (handler unit tests with Moq)
 ```
