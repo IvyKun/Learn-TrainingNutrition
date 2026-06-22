@@ -169,8 +169,8 @@ The domain already computes all of these values (`GetTotalMacros()` exists on `D
 
 | # | Feature | Endpoint | Status |
 |---|---|---|---|
-| 1 | List ingredients | `GET /ingredients` | Missing |
-| 2 | Search ingredients by name | `GET /ingredients?search=text` | Missing |
+| 1 | List ingredients | `GET /ingredients` | ✅ Done |
+| 2 | Search ingredients by name | `GET /ingredients?search=text` | ✅ Done |
 | 3 | Add ingredients to a meal | `POST /dailylogs/{date}/meals/{mealId}/ingredients` | Missing |
 | 4 | Daily log full response | `GET /dailylogs/{date}` (extended) | Partial — response too thin |
 

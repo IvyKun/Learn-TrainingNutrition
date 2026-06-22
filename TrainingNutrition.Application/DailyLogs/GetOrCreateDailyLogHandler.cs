@@ -16,7 +16,7 @@ public sealed class GetOrCreateDailyLogHandler : IRequestHandler<GetOrCreateDail
 
     public async Task<DailyLogResponse> Handle(GetOrCreateDailyLogCommand request, CancellationToken cancellationToken)
     {
-        var dailyLog = await _dailyLogRepository.GetByDateAsync(request.Date, cancellationToken);
+        var dailyLog = await _dailyLogRepository.GetByDateAsync(request.UserId, request.Date, cancellationToken);
 
         if(dailyLog == null)
         {

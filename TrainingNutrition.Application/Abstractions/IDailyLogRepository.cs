@@ -4,7 +4,7 @@ namespace TrainingNutrition.Application.Abstractions;
 
 public interface IDailyLogRepository
 {
-    Task<DailyLog?> GetByDateAsync(DateOnly date, CancellationToken cancellationToken = default);
+    Task<DailyLog?> GetByDateAsync(Guid userId, DateOnly date, CancellationToken cancellationToken = default);
 
     Task AddAsync(DailyLog dailyLog, CancellationToken cancellationToken = default);
 }

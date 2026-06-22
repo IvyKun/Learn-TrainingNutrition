@@ -18,7 +18,7 @@ public sealed class GetOrCreateDailyLogHandlerTests
         var dailyLog = new DailyLog(testUserId, testDate);
 
         var mockRepo = new Mock<IDailyLogRepository>();
-        mockRepo.Setup(r => r.GetByDateAsync(dailyLog.Date, It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByDateAsync(dailyLog.UserId, dailyLog.Date, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dailyLog);
 
         var handler = new GetOrCreateDailyLogHandler(mockRepo.Object);
@@ -45,7 +45,7 @@ public sealed class GetOrCreateDailyLogHandlerTests
         var dailyLog = new DailyLog(testUserId, testDate);
 
         var mockRepo = new Mock<IDailyLogRepository>();
-        mockRepo.Setup(r => r.GetByDateAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByDateAsync(dailyLog.UserId, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((DailyLog?)null);
 
         var handler = new GetOrCreateDailyLogHandler(mockRepo.Object);

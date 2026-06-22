@@ -21,8 +21,12 @@ public class EfDailyLogRepository : IDailyLogRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<DailyLog?> GetByDateAsync(DateOnly date, CancellationToken cancellationToken = default)
+    public async Task<DailyLog?> GetByDateAsync(Guid userId, DateOnly date, CancellationToken cancellationToken = default)
     {
-          return await _db.DailyLogs.FirstOrDefaultAsync(x => x.Date == date, cancellationToken);
+            return await _db.DailyLogs
+                            .Include(x => x.Meals)
+                                .ThenInclude(m => m.IngredientEntries)
+                                    .ThenInclude(e => e.Ingredient)
+                            .FirstOrDefaultAsync(x => x.UserId == userId && x.Date == date, cancellationToken);
     }
 }
