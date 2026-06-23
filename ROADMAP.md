@@ -168,8 +168,10 @@ The domain already computes all of these values (`GetTotalMacros()` exists on `D
 |---|---|---|---|
 | 1 | List ingredients | `GET /ingredients` | ✅ Done |
 | 2 | Search ingredients by name | `GET /ingredients?search=text` | ✅ Done |
-| 3 | Add ingredients to a meal | `POST /dailylogs/{date}/meals/{mealId}/ingredients` | Missing |
+| 3 | Add ingredients to a meal | `POST /dailylogs/{date}/meals/{mealId}/ingredients` | Partial — Command/Validator/Handler/Endpoint done, integration tests pending (see note below) |
 | 4 | Daily log full response | `GET /dailylogs/{date}` (extended) | Partial — response too thin |
+
+**Note on order:** Feature 4 is being built next, ahead of finishing feature 3's integration tests. Reason: the current `DailyLogResponse` only exposes `Date` and `TotalCalories` — it has no `Meals`, so there is no way for an integration test (or the future frontend) to discover a real `mealId` through the API. Once feature 4 exposes `Meals` with their `Id`, feature 3's integration tests can be written cleanly with plain HTTP calls, instead of reaching into `AppDbContext` directly just to read a `mealId`.
 
 ---
 
