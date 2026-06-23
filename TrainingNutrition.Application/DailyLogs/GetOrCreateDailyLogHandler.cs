@@ -1,4 +1,3 @@
-
 using MediatR;
 using TrainingNutrition.Application.Abstractions;
 using TrainingNutrition.Domain.Tracking;

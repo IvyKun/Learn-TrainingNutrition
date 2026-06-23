@@ -83,17 +83,14 @@ The search parameter is optional. If omitted, the full list is returned.
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/dailylogs/{date}/meals/{mealId}/ingredients` | Adds one or more ingredient entries to an existing meal |
+| `POST` | `/dailylogs/{date}/meals/{mealId}/ingredients` | Adds one ingredient entry to an existing meal |
 
 **Request body:**
 ```json
-{
-  "entries": [
-    { "ingredientId": "...", "grams": 80 },
-    { "ingredientId": "...", "grams": 200 }
-  ]
-}
+{ "ingredientId": "...", "grams": 80 }
 ```
+
+Each ingredient added by the user triggers its own request — this keeps every entry saved instantly, with no "unsaved changes" state in the UI to lose.
 
 **Response:** `204 No Content`
 

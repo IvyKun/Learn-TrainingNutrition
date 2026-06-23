@@ -21,6 +21,12 @@ public class EfDailyLogRepository : IDailyLogRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateAsync(DailyLog dailyLog, CancellationToken cancellationToken = default)
+    {
+        // EF Core change tracker detects the mutation automatically after GetByDateAsync
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<DailyLog?> GetByDateAsync(Guid userId, DateOnly date, CancellationToken cancellationToken = default)
     {
             return await _db.DailyLogs
@@ -29,4 +35,6 @@ public class EfDailyLogRepository : IDailyLogRepository
                                     .ThenInclude(e => e.Ingredient)
                             .FirstOrDefaultAsync(x => x.UserId == userId && x.Date == date, cancellationToken);
     }
+
+
 }
